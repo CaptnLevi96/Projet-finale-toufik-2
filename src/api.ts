@@ -5,6 +5,7 @@ import { api } from './api/index.js'
 
 const app = new Hono()
 
+// ROUTE /v1/...
 app.route('/v1', api.v1)
 
 const port = 3001
