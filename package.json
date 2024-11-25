@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "dev:api": "tsx watch src/api.ts",
-    "dev:client": "tsx watch src/client.ts"
+    "dev:client": "tsx watch src/web.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",
