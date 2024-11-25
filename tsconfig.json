@@ -10,5 +10,8 @@
     ],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
+    "allowImportingTsExtensions": true,
+    "moduleResolution": "nodenext",
+    "noEmit": true
   }
 }
