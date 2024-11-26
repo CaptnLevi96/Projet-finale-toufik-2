@@ -1,13 +1,13 @@
 // index.ts
-import { Hono } from 'hono'
-import users from './users/index.js'
-//import comments from './comments/index.js'
+import createV1App from './createApp.ts'
+import router from './users/users.index.ts'
 
-const v1 = new Hono()
+// @ROUTE /v1/..
+const v1 = createV1App().
+route('/v1', router)
+.get('/v1', (c) => {
+    return c.redirect('/v1/ui')
+})
 
-// ROUTE /v1/users/...
-v1.route('/users', users)
-
-//v1.route('/comments', comments)
-
+export type ApiV1Type = typeof v1
 export default v1
