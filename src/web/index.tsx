@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { Content } from './views/home.tsx'
 import { hc } from 'hono/client'
 import type { ApiV1Type } from '../api/routes/v1/index.ts'
+import { Status } from '../api/utils/statusCode.ts'
 
 export const web = new Hono()
 
@@ -13,12 +14,35 @@ web.get('/', (c) => {
 })
 
 web.get('/users', async (c) => {
-  const users = await client.v1.users.$get().then((r) => r.json())
-  console.log(users)
-  return c.html(
-  <div>
-    {users.map((user) => <div>{user.name}</div>)}
-  </div>)
+  const data = await client.v1.users.$post({
+    json: {
+      id: 1,
+      name: 'Mr nouveau',
+      role: 'user',
+      email: 'Mr.nouveau@example.com',
+    }
+  })
+
+  switch(data.status){
+    case Status.CREATED:
+      const user = await data.json()
+      return c.html(
+        <div>
+          <h1>User created</h1>
+          <p>ID: {user.id}</p>
+          <p>Name: {user.name}</p>
+          <p>Email: {user.email}</p>
+        </div>
+      )
+    case Status.UNPROCESSABLE_ENTITY:
+      const error = await data.json()
+      return c.html(
+        <div>
+          <h1>Error</h1>
+          <p>Message: {error.message}</p>
+        </div>
+      )
+  }
 })
 
 export default web

@@ -8,6 +8,7 @@ export const read: V1RouteHandler<ReadUsersRoute> = async (c) => {
         return c.json({
             id,
             name: 'John Doe',
+            role: 'user',
             email: 'john.doe@example.com',
         }, Status.OK)
     } else {
@@ -22,6 +23,7 @@ export const readList: V1RouteHandler<ReadListUsersRoute> = async (c) => {
     return  c.json([{
         id: 1,
         name: 'John Doe',
+        role: 'user',
         email: 'john.doe@example.com',
     }])
 }

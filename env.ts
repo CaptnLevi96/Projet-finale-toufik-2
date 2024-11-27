@@ -7,15 +7,9 @@ const EnvSchema = z.object({
     NODE_ENV: z.string().default('development'),
     PORT_API: z.coerce.number().default(3001),
     PORT_WEB: z.coerce.number().default(3000),
-    DATABASE_URL: z.string(),
-    DATABASE_USER: z.string(),
-    DATABASE_PASSWORD: z.string(),
-
-}).superRefine((data, ctx) => {
-    if (data.NODE_ENV === 'prod') {
-        // ctx.addIssue({}) // TODO: add issue
-    }
-    return true
+    DATABASE_URL: z.string().min(1),
+    DATABASE_USER: z.string().min(1),
+    DATABASE_PASSWORD: z.string().min(1),
 })
 
 export type Env = z.infer<typeof EnvSchema>

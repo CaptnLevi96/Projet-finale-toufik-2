@@ -10,6 +10,9 @@ export const userSchema = z.object({
             in: 'path',
         }
     }),
+    role: z.enum(['admin', 'user']).openapi({
+        example: 'user',
+    }),
     name: z.string().openapi({
         example: 'John Doe',
     }),
