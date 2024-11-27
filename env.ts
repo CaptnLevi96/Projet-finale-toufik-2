@@ -9,6 +9,7 @@ const EnvSchema = z.object({
     PORT_WEB: z.coerce.number().default(3000),
     DATABASE_URL: z.string().min(1),
     DATABASE_USER: z.string().min(1),
+    DATABASE_NAME: z.string().min(1),
     DATABASE_PASSWORD: z.string().min(1),
 })
 
