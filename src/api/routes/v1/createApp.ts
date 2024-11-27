@@ -1,11 +1,12 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { defaultHook } from "../../utils/defaultHook.ts";
 import { swaggerUI } from "@hono/swagger-ui";
+import type {V1Bindings } from "./types.ts";
 
 export function createV1Router() {
-    return new OpenAPIHono({
+    return new OpenAPIHono<V1Bindings> ({
         strict: false,
-        defaultHook: defaultHook
+        defaultHook: defaultHook,
     })
 }
 
