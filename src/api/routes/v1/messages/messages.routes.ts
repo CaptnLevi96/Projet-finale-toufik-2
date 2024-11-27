@@ -1,12 +1,8 @@
 import { Status } from './../../../utils/statusCode.ts';
 import { createRoute, z } from '@hono/zod-openapi'
 import { defaultErrorJsonContent, jsonContent } from '../../../utils/apiResponses.ts'
-import { userSchema } from '../users/users.routes.ts'  // Correction du chemin d'importation
+import { userSchema } from '../users/users.routes.ts'
 
-// Export de l'ID utilisateur pour référence
-export const userIdSchema = userSchema.shape.id
-
-// Schéma des messages
 export const messageSchema = z.object({
     id: z.coerce.number().openapi({
         example: 456,
@@ -15,23 +11,22 @@ export const messageSchema = z.object({
             in: 'path',
         }
     }),
-    userId: userIdSchema.openapi({
+    userId: userSchema.shape.id.openapi({
         example: 123,
-        description: "ID de l'utilisateur qui a créé le message"
+        description: "ID of the message creator"
     }),
     content: z.string().min(1).openapi({
-        example: 'Contenu du message',
-        description: 'Le contenu du message'
+        example: 'Message content',
+        description: 'Message content'
     }),
     createdAt: z.string().datetime().openapi({
         example: '2024-03-26T10:30:00Z',
-        description: 'Date de création du message'
+        description: 'Creation date'
     }),
 })
 
 const tags = ["Messages"]
 
-// Lecture d'un message
 export const read = createRoute({
     path: '/messages/{id}',
     method: 'get',
@@ -46,8 +41,8 @@ export const read = createRoute({
             messageSchema,
             'Message'
         ),
-        [Status.NOT_FOUND]: defaultErrorJsonContent("Message non trouvé"),
-        [Status.UNPROCESSABLE_ENTITY]: defaultErrorJsonContent("Entrée invalide"),
+        [Status.NOT_FOUND]: defaultErrorJsonContent("Message not found"),
+        [Status.UNPROCESSABLE_ENTITY]: defaultErrorJsonContent("Invalid input"),
     }
 })
 
@@ -55,7 +50,6 @@ export const readList = createRoute({
     path: '/messages',
     method: 'get',
     tags,
-    // Correction du paramètre de requête optionnel
     request: {
         query: z.object({
             userId: z.string().optional()
@@ -64,8 +58,9 @@ export const readList = createRoute({
     responses: {
         [Status.OK]: jsonContent(
             z.array(messageSchema),
-            'Liste des messages'
+            'List of messages'
         ),
+        [Status.NOT_FOUND]: defaultErrorJsonContent("No messages found"),
     }
 })
 
@@ -76,17 +71,17 @@ export const create = createRoute({
     request: {
         body: jsonContent(
             messageSchema.omit({ id: true, createdAt: true }),
-            'Message à créer',
+            'Message to create',
             true
         )
     },
     responses: {
         [Status.CREATED]: jsonContent(
             messageSchema,
-            'Message créé'
+            'Message created'
         ),
-        [Status.UNPROCESSABLE_ENTITY]: defaultErrorJsonContent("Entrée invalide"),
-        [Status.UNAUTHORIZED]: defaultErrorJsonContent("Non autorisé"),
+        [Status.UNPROCESSABLE_ENTITY]: defaultErrorJsonContent("Invalid input"),
+        [Status.UNAUTHORIZED]: defaultErrorJsonContent("Unauthorized"),
     }
 })
 
@@ -99,15 +94,15 @@ export const remove = createRoute({
             id: messageSchema.shape.id
         }),
         query: z.object({
-            userId: userIdSchema
+            userId: userSchema.shape.id
         })
     },
     responses: {
         [Status.NO_CONTENT]: {
-            description: 'Message supprimé avec succès'
+            description: 'Message successfully deleted'
         },
-        [Status.NOT_FOUND]: defaultErrorJsonContent("Message non trouvé"),
-        [Status.UNAUTHORIZED]: defaultErrorJsonContent("Non autorisé - Seul le propriétaire peut supprimer son message"),
+        [Status.NOT_FOUND]: defaultErrorJsonContent("Message not found"),
+        [Status.UNAUTHORIZED]: defaultErrorJsonContent("Unauthorized - Only the owner can delete their message"),
     }
 })
 
