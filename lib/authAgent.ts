@@ -1,4 +1,5 @@
 import { createClient, type Provider, type SupabaseClient, type User } from "@supabase/supabase-js";
+import type { SupabaseAuthClient } from "@supabase/supabase-js/dist/module/lib/SupabaseAuthClient.js";
 import type { Context } from "hono";
 import { setCookie, getCookie } from "hono/cookie";
 
@@ -30,56 +31,26 @@ type AuthCookie = {
 
 export type AuthUserVariable = User
 export class AuthAgent {
-    #authClient: SupabaseClient;
+    #client: SupabaseClient;
     #accessTokenCookieName: string;
     #refreshTokenCookieName: string;
     #entrypoint: string;
+    auth: SupabaseAuthClient;
+
 
     constructor(URL: string, SERVICE_ROLE: string, entrypoint: string) {
         this.#accessTokenCookieName = "access_token"
         this.#refreshTokenCookieName = "refresh_token"
         this.#entrypoint = entrypoint
-        this.#authClient = createClient(
+        this.#client = createClient(
             URL,
             SERVICE_ROLE
         )
+        this.auth = this.#client.auth
     }
 
-    async signup(req: AuthRequest) {
-        const clientHook = this.#authClient.auth.signUp
-        const { data, error } = await clientHook(req)
-        return { data, error }
-    }
-
-    async login(req: AuthRequest) {
-        const clientHook = this.#authClient.auth.signInWithPassword
-        const { data, error } = await clientHook(req)
-        return { data, error }
-    }
-
-    async loginAccessToken(req: AuthRequestProvider) {
-        const clientHook = this.#authClient.auth.signInWithIdToken
-        const token = req.accessToken ?? ""
-        const provider = req.provider
-        const { data, error } = await clientHook({ provider, token })
-        return { data, error }
-    }
-
-    async loginProvider(req: AuthRequestProvider) {
-        const clientHook = this.#authClient.auth.signInWithOAuth
-        const { data, error } = await clientHook(req)
-        return { data, error }
-    }
-
-    async refreshSession(req: { refresh_token: string }) {
-        const clientHook = this.#authClient.auth.refreshSession
-        const { data, error } = await clientHook(req)
-        return { data, error }
-    }
-    async getUser(req: { accessToken: string }) {
-        const clientHook = this.#authClient.auth.getUser
-        const { data, error } = await clientHook(req.accessToken)
-        return { data, error }
+    async signIn(req: AuthRequest) {
+        return await this.auth.signInWithPassword(req)
     }
 
     setAccessTokenCookie(req: AuthCookie) {
@@ -113,7 +84,7 @@ export class AuthAgent {
     }
 
     isConnected() {
-        return !!this.#authClient
+        return !!this.#client
     }
 }
 

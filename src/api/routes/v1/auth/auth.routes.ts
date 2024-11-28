@@ -1,7 +1,7 @@
 import { createRoute, z } from '@hono/zod-openapi'
 import { jsonContent } from '../../../utils/apiResponses.ts'
-import { userSchema } from '../users/users.routes.ts'
 import { Status } from '../../../utils/statusCode.ts'
+import { authActions } from '../../../middleware/authActions.middleware.ts'
 
 const authUserSchema = z.object({
     email: z.string().openapi({
@@ -51,6 +51,9 @@ export const signIn = createRoute({
             true
         )
     },
+    middleware: [
+        authActions,
+    ] as const,
     responses: {
         [Status.OK]: jsonContent(
             authActionMessage,

@@ -6,9 +6,9 @@ import messagesRouter from './messages/messages.index.ts'
 
 // @ROUTE /v1/..
 const v1 = createV1App()
-.route('/v1', userRouter)
 .route('/v1', authRouter)
 .route('/v1', messagesRouter)
+.route('/v1', userRouter)
 .get('/v1', (c) => {
     return c.redirect('/v1/ui')
 })

@@ -8,29 +8,26 @@ export const authVerify = createMiddleware(async (c, next) => {
     // -- Get auth infos
     const refreshToken = authAgent.getRefreshTokenCookie(c)
     const accessToken = authAgent.getAccessTokenCookie(c)
-    const { data, error } = await authAgent.getUser({ accessToken })
+    const { data, error } = await authAgent.auth.getUser(accessToken )
     // -- Set user
-    if(data.user){
+    if(data?.user){
         c.set('user', data.user)
     }else {
         c.set('user', null)
     }
     // -- Handle error
     if (error) {
-        console.error( "Error getUser:ByAccessToken: ", error)
         // -- If no refresh token, report
         if (!refreshToken) {
-            console.error("No refresh token")
             return c.json({
                 success: false,
-                error: error,
+                error: "No refresh token",
             }, Status.UNAUTHORIZED)
         }
         // -- If refresh token, refresh it
-        const { data: refreshed, error: refreshError } = await authAgent.refreshSession({ refresh_token: refreshToken })
+        const { data: refreshed, error: refreshError } = await authAgent.auth.refreshSession({ refresh_token: refreshToken })
         // -- If refresh error, report
         if (refreshError) {
-            console.error("Error refreshSession: ", refreshError)
             return c.json({
                 success: false,
                 error: refreshError,
@@ -41,6 +38,5 @@ export const authVerify = createMiddleware(async (c, next) => {
             c.set('user', refreshed.user)
         }
     }
-
     await next()
 })

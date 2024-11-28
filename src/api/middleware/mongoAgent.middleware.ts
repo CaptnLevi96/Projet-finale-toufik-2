@@ -5,6 +5,7 @@ import { createMongoAgent } from "../../../lib/MongoAgent.ts"
 
 const mongoAgent = createMongoAgent(env.DATABASE_URL, env.DATABASE_NAME)
 export const databaseAgentMiddleware = createMiddleware<V1Bindings>(async (c, next) => {
+    console.log('in databaseAgentMiddleware')
     try {
         await mongoAgent.connect()
         const db = await mongoAgent.database()        

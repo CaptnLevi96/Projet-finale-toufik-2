@@ -4,12 +4,12 @@ import { Status } from "../../../utils/statusCode.ts";
 
 export const signIn: V1RouteHandler<SignInRoute> = async (c) => {
     const user = c.req.valid("json")
-    console.log(c.var.authAgent)
     if(c.var.authAgent) {
-        const { data, error } = await c.var.authAgent.login(user)
+        console.log('in signIn')
+        const { data, error } = await c.var.authAgent.signIn(user)
         // TODO: insert user in database
         return c.json({
-            message: 'Login successfully',
+            message: data.user?.id + ' Login successfully',
         }, Status.OK)
     }
     else {
