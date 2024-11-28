@@ -11,6 +11,8 @@ const EnvSchema = z.object({
     DATABASE_USER: z.string().min(1),
     DATABASE_NAME: z.string().min(1),
     DATABASE_PASSWORD: z.string().min(1),
+    SUPABASE_URL: z.string().min(1),
+    SUPABASE_SERVICE_ROLE: z.string().min(1),
 })
 
 export type Env = z.infer<typeof EnvSchema>

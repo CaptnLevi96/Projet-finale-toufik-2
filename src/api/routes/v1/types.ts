@@ -1,6 +1,6 @@
-import type { OpenAPIHono, RouteConfig, RouteHandler } from "@hono/zod-openapi"
+import type { RouteConfig, RouteHandler } from "@hono/zod-openapi"
 import type { Env } from "hono";
-import type { MongoAgent, MongoDb } from "../../../../lib/MongoAgent.ts";
+import type { MongoDb } from "../../../../lib/MongoAgent.ts";
 
 export interface V1Bindings extends Env {
     Variables: {

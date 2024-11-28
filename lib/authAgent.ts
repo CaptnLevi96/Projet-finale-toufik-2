@@ -1,0 +1,114 @@
+import { AuthError, createClient, SupabaseClient, type Provider } from "@supabase/supabase-js";
+import type { Context } from "hono";
+import { setCookie, getCookie } from "hono/cookie";
+import type { Auth } from "hono/utils/basic-auth";
+
+
+type AuthRequestProvider = {
+    provider: Provider,
+    accessToken?: string,
+    options?: {
+        redirectTo?: string,
+        scopes?: string,
+        data?: any
+    }
+}
+
+type AuthRequest = {
+    email: string,
+    password: string,
+    option?: {
+        channel: string,
+        emailRedirectTo: string,
+        data: any
+    }
+}
+
+type AuthCookie = {
+    c: Context,
+    token: string,
+    expireAt: string,
+}
+
+export class AuthAgent<T = any> {
+    #authClient: SupabaseClient;
+    accessTokenCookieName: string;
+    refreshTokenCookieName: string;
+
+    constructor(URL: string, SERVICE_ROLE: string) {
+        this.accessTokenCookieName = "access_token"
+        this.refreshTokenCookieName = "refresh_token"
+        this.#authClient = createClient(
+            URL,
+            SERVICE_ROLE
+        )
+    }
+
+    async signup(req: AuthRequest) {
+        const clientHook = this.#authClient.auth.signUp
+        const { data, error } = await clientHook(req)
+        return { data, error }
+    }
+
+    async login(req: AuthRequest) {
+        const clientHook = this.#authClient.auth.signInWithPassword
+        const { data, error } = await clientHook(req)
+        return { data, error }
+    }
+
+    async loginAccessToken(req: AuthRequestProvider) {
+        const clientHook = this.#authClient.auth.signInWithIdToken
+        const token = req.accessToken ?? ""
+        const provider = req.provider
+        const { data, error } = await clientHook({ provider, token })
+        return { data, error }
+    }
+
+    async loginProvider(req: AuthRequestProvider) {
+        const clientHook = this.#authClient.auth.signInWithOAuth
+        const { data, error } = await clientHook(req)
+        return { data, error }
+    }
+
+    async refreshSession(req: { refresh_token: string }) {
+        const clientHook = this.#authClient.auth.refreshSession
+        const { data, error } = await clientHook(req)
+        return { data, error }
+    }
+
+    async setAccessTokenCookie(req: AuthCookie) {
+        const { c, token, expireAt } = req
+        setCookie(c, this.accessTokenCookieName, token, {
+            ...(expireAt && { expires: new Date(expireAt) }),
+            httpOnly: true,
+            path: "/",
+            secure: true,
+        })
+    }
+
+    async setRefreshTokenCookie(req: AuthCookie) {
+        const { c, token, expireAt } = req
+        setCookie(c, this.refreshTokenCookieName, token, {
+            ...(expireAt && { expires: new Date(expireAt) }),
+            httpOnly: true,
+            path: "/",
+            secure: true,
+        })
+    }    
+
+    async getUser(req: { accessToken: string }) {
+        const clientHook = this.#authClient.auth.getUser
+        const { data, error } = await clientHook(req.accessToken)
+        return { data, error }
+    }
+
+    async getAccessTokenCookie(c: Context) {
+        const token = getCookie(c, this.accessTokenCookieName)
+        return token
+    }
+
+    async getRefreshTokenCookie(c: Context) {
+        const token = getCookie(c, this.refreshTokenCookieName)
+        return token
+    }
+}
