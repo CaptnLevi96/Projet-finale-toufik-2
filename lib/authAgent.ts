@@ -1,8 +1,6 @@
-import { AuthError, createClient, SupabaseClient, type Provider } from "@supabase/supabase-js";
+import { createClient, type Provider, type SupabaseClient, type User } from "@supabase/supabase-js";
 import type { Context } from "hono";
 import { setCookie, getCookie } from "hono/cookie";
-import type { Auth } from "hono/utils/basic-auth";
-
 
 type AuthRequestProvider = {
     provider: Provider,
@@ -30,14 +28,15 @@ type AuthCookie = {
     expireAt: string,
 }
 
+export type AuthUserVariable = User
 export class AuthAgent<T = any> {
     #authClient: SupabaseClient;
-    accessTokenCookieName: string;
-    refreshTokenCookieName: string;
+    #accessTokenCookieName: string;
+    #refreshTokenCookieName: string;
 
     constructor(URL: string, SERVICE_ROLE: string) {
-        this.accessTokenCookieName = "access_token"
-        this.refreshTokenCookieName = "refresh_token"
+        this.#accessTokenCookieName = "access_token"
+        this.#refreshTokenCookieName = "refresh_token"
         this.#authClient = createClient(
             URL,
             SERVICE_ROLE
@@ -75,10 +74,15 @@ export class AuthAgent<T = any> {
         const { data, error } = await clientHook(req)
         return { data, error }
     }
+    async getUser(req: { accessToken: string }) {
+        const clientHook = this.#authClient.auth.getUser
+        const { data, error } = await clientHook(req.accessToken)
+        return { data, error }
+    }
 
-    async setAccessTokenCookie(req: AuthCookie) {
+    setAccessTokenCookie(req: AuthCookie) {
         const { c, token, expireAt } = req
-        setCookie(c, this.accessTokenCookieName, token, {
+        setCookie(c, this.#accessTokenCookieName, token, {
             ...(expireAt && { expires: new Date(expireAt) }),
             httpOnly: true,
             path: "/",
@@ -86,9 +90,9 @@ export class AuthAgent<T = any> {
         })
     }
 
-    async setRefreshTokenCookie(req: AuthCookie) {
+    setRefreshTokenCookie(req: AuthCookie) {
         const { c, token, expireAt } = req
-        setCookie(c, this.refreshTokenCookieName, token, {
+        setCookie(c, this.#refreshTokenCookieName, token, {
             ...(expireAt && { expires: new Date(expireAt) }),
             httpOnly: true,
             path: "/",
@@ -96,19 +100,13 @@ export class AuthAgent<T = any> {
         })
     }    
 
-    async getUser(req: { accessToken: string }) {
-        const clientHook = this.#authClient.auth.getUser
-        const { data, error } = await clientHook(req.accessToken)
-        return { data, error }
-    }
-
-    async getAccessTokenCookie(c: Context) {
-        const token = getCookie(c, this.accessTokenCookieName)
+    getAccessTokenCookie(c: Context) {
+        const token = getCookie(c, this.#accessTokenCookieName) ?? ""
         return token
     }
 
-    async getRefreshTokenCookie(c: Context) {
-        const token = getCookie(c, this.refreshTokenCookieName)
+    getRefreshTokenCookie(c: Context) {
+        const token = getCookie(c, this.#refreshTokenCookieName) ?? ""
         return token
     }
 }
