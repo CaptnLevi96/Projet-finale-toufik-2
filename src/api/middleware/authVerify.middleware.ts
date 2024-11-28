@@ -1,11 +1,10 @@
 import { createMiddleware } from "hono/factory"
 import env from "../../../env.ts"
-import { AuthAgent } from "../../../lib/authAgent.ts"
 import { Status } from "../utils/statusCode.ts"
+import { createAuthAgent } from "../../../lib/authAgent.ts"
 
-const authAgent = new AuthAgent(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE)
-
-export const authMiddleware = createMiddleware(async (c, next) => {
+const authAgent = createAuthAgent(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE, 'auth-verify')
+export const authVerify = createMiddleware(async (c, next) => {
     // -- Get auth infos
     const refreshToken = authAgent.getRefreshTokenCookie(c)
     const accessToken = authAgent.getAccessTokenCookie(c)

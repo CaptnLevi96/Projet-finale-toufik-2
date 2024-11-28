@@ -29,14 +29,16 @@ type AuthCookie = {
 }
 
 export type AuthUserVariable = User
-export class AuthAgent<T = any> {
+export class AuthAgent {
     #authClient: SupabaseClient;
     #accessTokenCookieName: string;
     #refreshTokenCookieName: string;
+    #entrypoint: string;
 
-    constructor(URL: string, SERVICE_ROLE: string) {
+    constructor(URL: string, SERVICE_ROLE: string, entrypoint: string) {
         this.#accessTokenCookieName = "access_token"
         this.#refreshTokenCookieName = "refresh_token"
+        this.#entrypoint = entrypoint
         this.#authClient = createClient(
             URL,
             SERVICE_ROLE
@@ -109,4 +111,14 @@ export class AuthAgent<T = any> {
         const token = getCookie(c, this.#refreshTokenCookieName) ?? ""
         return token
     }
+
+    isConnected() {
+        return !!this.#authClient
+    }
+}
+
+export const createAuthAgent = (URL: string, SERVICE_ROLE: string, entrypoint: string) => {
+    const authAgent = new AuthAgent(URL, SERVICE_ROLE, entrypoint)
+    console.log(authAgent.isConnected(), entrypoint)
+    return authAgent
 }

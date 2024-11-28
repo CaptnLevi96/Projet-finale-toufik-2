@@ -1,10 +1,12 @@
 import { createV1Router } from "../createApp.ts"
-import { databaseAgentMiddleware } from "../../../middleware/mongoAgent.middleware.ts"
-import { authMiddleware } from "../../../middleware/authAgent.middleware.ts"
+import * as routes from "./auth.routes.ts"
+import * as handlers from "./auth.handlers.ts"
+import { authActions } from "../../../middleware/authActions.middleware.ts"
 
 const router = createV1Router()
-.use(databaseAgentMiddleware)
-.use(authMiddleware)
+.basePath('/auth')
+.openapi(routes.signIn, handlers.signIn)
+.use('/*', authActions)
 
 
 export default router

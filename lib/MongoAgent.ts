@@ -37,7 +37,6 @@ export class MongoAgent {
     }
 
     isConnected() {
-        console.log(this.#client.topology)
         return !!this.#client && !!this.#client.topology && this.#client.topology.isConnected();
     }
 
