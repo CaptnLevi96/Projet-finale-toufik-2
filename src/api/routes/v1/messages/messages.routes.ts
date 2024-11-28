@@ -11,9 +11,9 @@ export const messageSchema = z.object({
             in: 'path',
         }
     }),
-    userId: userSchema.shape.id.openapi({
+    userId: z.coerce.number().openapi({
         example: 123,
-        description: "ID of the message creator"
+        description: "ID of the message creator",
     }),
     content: z.string().min(1).openapi({
         example: 'Message content',
@@ -94,7 +94,7 @@ export const remove = createRoute({
             id: messageSchema.shape.id
         }),
         query: z.object({
-            userId: userSchema.shape.id
+            userId: messageSchema.shape.userId
         })
     },
     responses: {
