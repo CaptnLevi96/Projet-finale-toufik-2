@@ -1,6 +1,7 @@
 import { Status } from './../../../utils/statusCode.ts';
 import { createRoute, z } from '@hono/zod-openapi'
 import { defaultErrorJsonContent, jsonContent } from '../../../utils/apiResponses.ts'
+import { databaseAgentMiddleware } from '../../../middleware/mongoAgent.middleware.ts';
 
 export const userSchema = z.object({
     id: z.coerce.number().openapi({
@@ -10,7 +11,7 @@ export const userSchema = z.object({
             in: 'path',
         }
     }),
-    role: z.enum(['admin', 'user']).openapi({
+    role: z.enum(['admin', 'user', 'owner']).openapi({
         example: 'user',
     }),
     name: z.string().openapi({
@@ -27,6 +28,9 @@ export const read = createRoute({
     path: '/users/{id}',
     method: 'get',
     tags,
+    middleware: [
+        databaseAgentMiddleware,
+    ] as const,
     request: {
         params: z.object({
             id: userSchema.shape.id
@@ -46,6 +50,9 @@ export const readList = createRoute({
     path: '/users',
     method: 'get',
     tags,
+    middleware: [
+        databaseAgentMiddleware,
+    ] as const,
     responses: {
         [Status.OK]: jsonContent(
             z.array(userSchema),
@@ -58,6 +65,9 @@ export const create = createRoute({
     path: '/users',
     method: 'post',
     tags,
+    middleware: [
+        databaseAgentMiddleware,
+    ] as const,
     request: {
         body: jsonContent(
             userSchema,

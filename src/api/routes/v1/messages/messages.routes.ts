@@ -2,6 +2,7 @@ import { Status } from './../../../utils/statusCode.ts';
 import { createRoute, z } from '@hono/zod-openapi'
 import { defaultErrorJsonContent, jsonContent } from '../../../utils/apiResponses.ts'
 import { userSchema } from '../users/users.routes.ts'
+import { databaseAgentMiddleware } from '../../../middleware/mongoAgent.middleware.ts';
 
 export const messageSchema = z.object({
     id: z.coerce.number().openapi({
@@ -31,6 +32,9 @@ export const read = createRoute({
     path: '/messages/{id}',
     method: 'get',
     tags,
+    middleware: [
+        databaseAgentMiddleware
+    ] as const,
     request: {
         params: z.object({
             id: messageSchema.shape.id
@@ -50,6 +54,9 @@ export const readList = createRoute({
     path: '/messages',
     method: 'get',
     tags,
+    middleware: [
+        databaseAgentMiddleware
+    ] as const,
     request: {
         query: z.object({
             userId: z.string().optional()
@@ -68,6 +75,9 @@ export const create = createRoute({
     path: '/messages',
     method: 'post',
     tags,
+    middleware: [
+        databaseAgentMiddleware
+    ] as const,
     request: {
         body: jsonContent(
             messageSchema.omit({ id: true, createdAt: true }),
@@ -89,6 +99,9 @@ export const remove = createRoute({
     path: '/messages/{id}',
     method: 'delete',
     tags,
+    middleware: [
+        databaseAgentMiddleware
+    ] as const,
     request: {
         params: z.object({
             id: messageSchema.shape.id

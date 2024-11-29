@@ -29,9 +29,3 @@ export const readList: V1RouteHandler<ReadListUsersRoute> = async (c) => {
         email: 'john.doe@example.com',
     }])
 }
-
-export const create: V1RouteHandler<CreateUserRoute> = async (c) => {
-    const user = c.req.valid("json") // strip away values and is always valid
-    // TODO: insert user in database
-    return c.json(user, Status.CREATED)
-}

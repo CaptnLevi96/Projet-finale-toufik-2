@@ -13,8 +13,10 @@ app.use(serveEmojiFavicon('🧱'))
 app.route('/',  web)
 
 const port = env.PORT_WEB
+
 serve({
   fetch: app.fetch,
   port
 })
+
 console.log(`Server is running on http://localhost:${port}`)

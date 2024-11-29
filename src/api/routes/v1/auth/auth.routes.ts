@@ -21,6 +21,7 @@ const authUserSchema = z.object({
     }),
 })
 
+const tags = ["Auth"]
 const providersArray = [ 'google' ] as const
 
 const authProviderSchema = z.object({
@@ -51,6 +52,7 @@ export const signIn = createRoute({
             true
         )
     },
+    tags,
     middleware: [
         authActions,
     ] as const,
@@ -76,6 +78,10 @@ export const signInWithProvider = createRoute({
             true
         )
     },
+    tags,
+    middleware: [
+        authActions,
+    ] as const,
     responses: {
         [Status.OK]: jsonContent(
             authActionMessage,
@@ -98,6 +104,10 @@ export const signUp = createRoute({
             true
         )
     },
+    tags,
+    middleware: [
+        authActions,
+    ] as const,
     responses: {
         [200]: jsonContent(
             authActionMessage,
@@ -113,6 +123,10 @@ export const signUp = createRoute({
 export const refresh = createRoute({
     path: '/auth/refresh',
     method: 'get',
+    tags,
+    middleware: [
+        authActions,
+    ] as const,
     responses: {
         [200]: jsonContent(
             authActionMessage,
@@ -128,6 +142,10 @@ export const refresh = createRoute({
 export const signOut = createRoute({
     path: '/auth/signout',
     method: 'get',
+    tags,
+    middleware: [
+        authActions,
+    ] as const,
     responses: {
         [200]: jsonContent(
             authActionMessage,
@@ -140,8 +158,26 @@ export const signOut = createRoute({
     }
 })
 
+export const testGetUser = createRoute({
+    path: '/auth/test',
+    method: 'get',
+    tags,
+    middleware: [
+        authActions,
+    ] as const,
+    responses: {
+        [Status.OK]: jsonContent(
+            authActionMessage,
+            'Test successfully'
+        ),
+        [Status.UNAUTHORIZED]: jsonContent(
+            authActionMessage,
+            'Test failed'
+        ),
+    }
+})
+
 export type SignInRoute = typeof signIn
-export type SignInWithProviderRoute = typeof signInWithProvider
 export type SignUpRoute = typeof signUp
 export type SignOutRoute = typeof signOut
 export type RefreshRoute = typeof refresh
