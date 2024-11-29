@@ -1,7 +1,6 @@
 import { Status } from './../../../utils/statusCode.ts';
 import { createRoute, z } from '@hono/zod-openapi'
 import { defaultErrorJsonContent, jsonContent } from '../../../utils/apiResponses.ts'
-import { messageSchema } from '../messages/messages.routes.ts'
 import { databaseAgentMiddleware } from '../../../middleware/mongoAgent.middleware.ts';
 
 export const commentSchema = z.object({
