@@ -8,6 +8,5 @@ const router = createV1Router()
     .openapi(routes.read, handlers.read)
     .openapi(routes.create, handlers.create)
     .openapi(routes.remove, handlers.remove)
-    .use(databaseAgentMiddleware)
-
+    
 export default router

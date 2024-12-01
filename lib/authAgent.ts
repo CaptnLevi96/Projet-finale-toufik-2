@@ -1,95 +1,44 @@
-import { createClient, type Provider, type SupabaseClient, type User } from "@supabase/supabase-js";
+import { createClient, type Provider, type Session, type SupabaseClient, type User } from "@supabase/supabase-js";
 import type { SupabaseAuthClient } from "@supabase/supabase-js/dist/module/lib/SupabaseAuthClient.js";
 import type { Context } from "hono";
 import { setCookie, getCookie } from "hono/cookie";
+import env from "../env.ts";
 
-type AuthRequestProvider = {
-    provider: Provider,
-    accessToken?: string,
-    options?: {
-        redirectTo?: string,
-        scopes?: string,
-        data?: any
-    }
+
+type AuthCookie = { c: Context, session: Session }
+
+export const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE)
+
+const _accessTokenCookieName = "access_token"
+export function setAccessTokenCookie(req: AuthCookie) {
+    const { c, session } = req
+    const { access_token, expires_at, expires_in } = session
+    setCookie(c, _accessTokenCookieName, access_token, {
+        ...(expires_in && { expires: new Date(expires_in + new Date().getTime()) }),
+        httpOnly: true,
+        path: "/",
+        secure: true,
+    })
+    console.log('get cookie', getCookie(c, _accessTokenCookieName))
+}
+export function getAccessTokenCookie(c: Context) {
+    const token = getCookie(c, _accessTokenCookieName) ?? ""
+    return token
 }
 
-type AuthRequest = {
-    email: string,
-    password: string,
-    option?: {
-        channel: string,
-        emailRedirectTo: string,
-        data: any
-    }
+const _refreshTokenCookieName = "refresh_token"
+export function setRefreshTokenCookie(req: AuthCookie) {
+    const { c, session } = req
+    const { refresh_token, expires_at, expires_in } = session
+    setCookie(c, _refreshTokenCookieName, refresh_token, {
+        ...(expires_in && { expires: new Date(expires_in + new Date().getTime()) }),
+        httpOnly: true,
+        path: "/",
+        secure: true,
+    })
+    console.log('get cookie', getCookie(c, _refreshTokenCookieName))
 }
-
-type AuthCookie = {
-    c: Context,
-    token: string,
-    expireAt: string,
-}
-
-export type AuthUserVariable = User
-export class AuthAgent {
-    #client: SupabaseClient;
-    #accessTokenCookieName: string;
-    #refreshTokenCookieName: string;
-    #entrypoint: string;
-    auth: SupabaseAuthClient;
-
-
-    constructor(URL: string, SERVICE_ROLE: string, entrypoint: string) {
-        this.#accessTokenCookieName = "access_token"
-        this.#refreshTokenCookieName = "refresh_token"
-        this.#entrypoint = entrypoint
-        this.#client = createClient(
-            URL,
-            SERVICE_ROLE
-        )
-        this.auth = this.#client.auth
-    }
-
-    async signIn(req: AuthRequest) {
-        return await this.auth.signInWithPassword(req)
-    }
-
-    setAccessTokenCookie(req: AuthCookie) {
-        const { c, token, expireAt } = req
-        setCookie(c, this.#accessTokenCookieName, token, {
-            ...(expireAt && { expires: new Date(expireAt) }),
-            httpOnly: true,
-            path: "/",
-            secure: true,
-        })
-    }
-
-    setRefreshTokenCookie(req: AuthCookie) {
-        const { c, token, expireAt } = req
-        setCookie(c, this.#refreshTokenCookieName, token, {
-            ...(expireAt && { expires: new Date(expireAt) }),
-            httpOnly: true,
-            path: "/",
-            secure: true,
-        })
-    }    
-
-    getAccessTokenCookie(c: Context) {
-        const token = getCookie(c, this.#accessTokenCookieName) ?? ""
-        return token
-    }
-
-    getRefreshTokenCookie(c: Context) {
-        const token = getCookie(c, this.#refreshTokenCookieName) ?? ""
-        return token
-    }
-
-    isConnected() {
-        return !!this.#client
-    }
-}
-
-export const createAuthAgent = (URL: string, SERVICE_ROLE: string, entrypoint: string) => {
-    const authAgent = new AuthAgent(URL, SERVICE_ROLE, entrypoint)
-    console.log(authAgent.isConnected(), entrypoint)
-    return authAgent
+export function getRefreshTokenCookie(c: Context) {
+    const token = getCookie(c, _refreshTokenCookieName) ?? ""
+    return token
 }

@@ -2,6 +2,7 @@ import { Status } from './../../../utils/statusCode.ts';
 import { createRoute, z } from '@hono/zod-openapi'
 import { defaultErrorJsonContent, jsonContent } from '../../../utils/apiResponses.ts'
 import { databaseAgentMiddleware } from '../../../middleware/mongoAgent.middleware.ts';
+import { authVerify } from '../../../middleware/authVerify.middleware.ts';
 
 export const userSchema = z.object({
     id: z.coerce.number().openapi({
@@ -52,6 +53,7 @@ export const readList = createRoute({
     tags,
     middleware: [
         databaseAgentMiddleware,
+        authVerify,
     ] as const,
     responses: {
         [Status.OK]: jsonContent(

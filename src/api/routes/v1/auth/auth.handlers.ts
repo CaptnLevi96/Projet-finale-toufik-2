@@ -1,20 +1,28 @@
-import type { SignInRoute, SignUpRoute, SignOutRoute, RefreshRoute } from "./auth.routes.ts";
+import type { SignInRoute, SignUpRoute, SignOutRoute, RefreshRoute, TestGetUserRoute } from "./auth.routes.ts";
 import type { V1RouteHandler } from "../types.ts";
 import { Status } from "../../../utils/statusCode.ts";
+import { setAccessTokenCookie, setRefreshTokenCookie, supabase } from "../../../../../lib/authAgent.ts";
 
 export const signIn: V1RouteHandler<SignInRoute> = async (c) => {
     const user = c.req.valid("json")
-    if(c.var.authAgent) {
-        const { data, error } = await c.var.authAgent.signIn(user)
-        return c.json({
-            message: 'Logged in successfully',
-        }, Status.OK)
-    }
-    else {
-        return c.json({
-            message: 'Login failed',
+    const { data, error } = await supabase.auth.signInWithPassword({ email: user.email, password: user.password })
+    console.log(data, 'data')
+    if(error) {
+        c.json({
+            message: 'Error while logging in',
         }, Status.UNAUTHORIZED)
     }
+
+    // Set cookies
+    if(data.session) {
+        console.log(data.session, 'data.session')
+        setAccessTokenCookie({c, session: data.session})
+        setRefreshTokenCookie({c, session: data.session})
+    }
+    console.log(data.user)
+    return c.json({
+        message: 'Logged in successfully',
+    }, Status.OK)
 }
 
 export const signUp: V1RouteHandler<SignUpRoute> = async (c) => {
@@ -36,5 +44,19 @@ export const refresh: V1RouteHandler<RefreshRoute> = async (c) => {
     // TODO: refresh user in database
     return c.json({
         message: 'Refresh successfully',
+    }, Status.OK)
+}
+
+export const testGetUser: V1RouteHandler<TestGetUserRoute> = async (c) => {
+    const user = await c.var.user ?? null
+    if(user) {
+        return c.json({
+            message: 'Error while getting user',
+            data: null
+        }, Status.UNAUTHORIZED)
+    }
+    return c.json({
+        message: 'User successfully retrieved',
+        data: user
     }, Status.OK)
 }

@@ -1,13 +1,12 @@
 import type { RouteConfig, RouteHandler } from "@hono/zod-openapi"
 import type { Env } from "hono";
-import type { AuthAgent, AuthUserVariable } from "../../../../lib/authAgent.ts";
-import type { MongoDb } from "../../../../lib/MongoAgent.ts";  // Correction de la casse ici
+import type { MongoDb } from "../../../../lib/mongoAgent.ts";
+import type { AuthUserVariable } from "../../middleware/authVerify.middleware.ts";
 
 export interface V1Bindings extends Env {
     Variables: {
         // ... bindings passed with (c) => {}: connects set with middleware
         databaseAgent?: MongoDb
-        authAgent?: AuthAgent
         user?: AuthUserVariable
     }
 }

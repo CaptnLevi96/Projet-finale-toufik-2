@@ -1,7 +1,7 @@
 import { createRoute, z } from '@hono/zod-openapi'
 import { jsonContent } from '../../../utils/apiResponses.ts'
 import { Status } from '../../../utils/statusCode.ts'
-import { authActions } from '../../../middleware/authActions.middleware.ts'
+import { authVerify } from '../../../middleware/authVerify.middleware.ts'
 
 const authUserSchema = z.object({
     email: z.string().openapi({
@@ -53,9 +53,6 @@ export const signIn = createRoute({
         )
     },
     tags,
-    middleware: [
-        authActions,
-    ] as const,
     responses: {
         [Status.OK]: jsonContent(
             authActionMessage,
@@ -79,9 +76,6 @@ export const signInWithProvider = createRoute({
         )
     },
     tags,
-    middleware: [
-        authActions,
-    ] as const,
     responses: {
         [Status.OK]: jsonContent(
             authActionMessage,
@@ -105,9 +99,6 @@ export const signUp = createRoute({
         )
     },
     tags,
-    middleware: [
-        authActions,
-    ] as const,
     responses: {
         [200]: jsonContent(
             authActionMessage,
@@ -124,9 +115,6 @@ export const refresh = createRoute({
     path: '/auth/refresh',
     method: 'get',
     tags,
-    middleware: [
-        authActions,
-    ] as const,
     responses: {
         [200]: jsonContent(
             authActionMessage,
@@ -143,9 +131,6 @@ export const signOut = createRoute({
     path: '/auth/signout',
     method: 'get',
     tags,
-    middleware: [
-        authActions,
-    ] as const,
     responses: {
         [200]: jsonContent(
             authActionMessage,
@@ -163,7 +148,7 @@ export const testGetUser = createRoute({
     method: 'get',
     tags,
     middleware: [
-        authActions,
+        authVerify,
     ] as const,
     responses: {
         [Status.OK]: jsonContent(
@@ -181,3 +166,4 @@ export type SignInRoute = typeof signIn
 export type SignUpRoute = typeof signUp
 export type SignOutRoute = typeof signOut
 export type RefreshRoute = typeof refresh
+export type TestGetUserRoute = typeof testGetUser

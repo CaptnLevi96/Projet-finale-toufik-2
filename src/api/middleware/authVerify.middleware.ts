@@ -1,14 +1,16 @@
 import { createMiddleware } from "hono/factory"
-import env from "../../../env.ts"
 import { Status } from "../utils/statusCode.ts"
-import { createAuthAgent } from "../../../lib/authAgent.ts"
+import { getAccessTokenCookie, getRefreshTokenCookie, supabase } from "../../../lib/authAgent.ts"
+import type { User } from '@supabase/supabase-js';
 
-const authAgent = createAuthAgent(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE, 'auth-verify')
+
+export type AuthUserVariable = User
 export const authVerify = createMiddleware(async (c, next) => {
     // -- Get auth infos
-    const refreshToken = authAgent.getRefreshTokenCookie(c)
-    const accessToken = authAgent.getAccessTokenCookie(c)
-    const { data, error } = await authAgent.auth.getUser(accessToken )
+    const refreshToken = getRefreshTokenCookie(c)
+    const accessToken = getAccessTokenCookie(c)
+
+    const { data, error } = await supabase.auth.getUser(accessToken)
     // -- Set user
     if(data?.user){
         c.set('user', data.user)
@@ -25,7 +27,7 @@ export const authVerify = createMiddleware(async (c, next) => {
             }, Status.UNAUTHORIZED)
         }
         // -- If refresh token, refresh it
-        const { data: refreshed, error: refreshError } = await authAgent.auth.refreshSession({ refresh_token: refreshToken })
+        const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession({ refresh_token: refreshToken })
         // -- If refresh error, report
         if (refreshError) {
             return c.json({
