@@ -3,6 +3,7 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 
 import { api } from './api/index.js'
+import { web } from './web/index.js'
 import { serveEmojiFavicon } from './api/utils/serveEmojiFavicon.ts';
 
 const app = new Hono()
@@ -10,10 +11,14 @@ const app = new Hono()
 // @ROUTE /Favicon.ico
 app.use(serveEmojiFavicon('🚀'))
 
-// @ROUTE /v1/...
+// @ROUTE /api/v1/...
 app.route('/', api.v1)
 
-const port = env.PORT_API
+// @ROUTE /../..
+app.route('/',  web)
+
+
+const port = env.PORT
 console.log(`Server is running on http://localhost:${port}`)
 
 serve({

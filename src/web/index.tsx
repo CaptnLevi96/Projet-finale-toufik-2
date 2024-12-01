@@ -6,7 +6,7 @@ import { getCookie } from 'hono/cookie'
 export const web = new Hono()
 
 
-const client = hc<ApiV1Type>('http://localhost:3001/')
+const client = hc<ApiV1Type>('http://localhost:3000/')
 
 web.get('/', (c) => {
   const messages = "IM A MESSAGE"
@@ -14,11 +14,11 @@ web.get('/', (c) => {
 })
 
 web.get('/test', async (c) => {
-  const data = await client.v1.auth.signin.$post(
+  const data = await client.api.v1.auth.signin.$post(
     {
       json: {
-        email: 'test@test.com',
-        password: 'test',
+        email: 'fake@user.com',
+        password: 'password',
       }
     }
   ).then((r) => r.json())
@@ -34,12 +34,11 @@ web.get('/test', async (c) => {
 web.get('/test2', async (c) => {
   const accessToken = getCookie(c, 'access_token')
   console.log(accessToken)
-  const data = await client.v1.auth.test.$get().then((r) => r.json())
+  const data = await client.api.v1.auth.test.$get().then((r) => r.json())
   console.log(data)
   return c.html(
     <div>
-      {data.message}
-      <h1>Logged in</h1>
+
     </div>
   )
 })

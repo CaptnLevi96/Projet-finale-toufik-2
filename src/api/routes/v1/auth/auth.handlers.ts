@@ -49,10 +49,11 @@ export const refresh: V1RouteHandler<RefreshRoute> = async (c) => {
 
 export const testGetUser: V1RouteHandler<TestGetUserRoute> = async (c) => {
     const user = await c.var.user ?? null
-    if(user) {
+    if(!user) {
+        console.log(user)
         return c.json({
             message: 'Error while getting user',
-            data: null
+            data: user
         }, Status.UNAUTHORIZED)
     }
     return c.json({

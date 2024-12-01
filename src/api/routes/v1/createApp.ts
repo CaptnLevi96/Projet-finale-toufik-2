@@ -13,7 +13,7 @@ export function createV1Router() {
 export default function createV1App() {
     const v1 = createV1Router()
     // @Desc - Publish the openapi.json
-    .doc("/v1/doc", {
+    .doc("/api/v1/doc", {
         openapi: "3.0.0",
         info: {
             title: "API V1",
@@ -21,6 +21,6 @@ export default function createV1App() {
         },
     })
     // @Desc - Visually extends the openapi.json
-    .get('/v1/ui', swaggerUI({url: '/v1/doc'}))
+    .get('/api/v1/ui', swaggerUI({url: '/api/v1/doc'}))
     return v1
 }
