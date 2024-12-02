@@ -1,6 +1,7 @@
 import { createRoute, z } from '@hono/zod-openapi'
 import { jsonContent } from '../../../utils/apiResponses.ts'
 import { Status } from '../../../utils/statusCode.ts'
+import { databaseAgentMiddleware } from '../../../middleware/mongoAgent.middleware.ts'
 import { authVerify } from '../../../middleware/authVerify.middleware.ts'
 
 const authUserSchema = z.object({
@@ -11,30 +12,13 @@ const authUserSchema = z.object({
         example: 'password',
     }),
     data: z.object({
-        name: z.string().openapi({
+        username: z.string().openapi({
             example: 'John Doe',
         })
-    }).optional().openapi({
-        example: {
-            name: 'John Doe',
-        }
     }),
 })
 
 const tags = ["Auth"]
-const providersArray = [ 'google' ] as const
-
-const authProviderSchema = z.object({
-    provider: z.enum(providersArray).openapi({
-        example: 'google',
-    }),
-    token: z.string().openapi({
-        example: 'secret-token',
-    }),
-    accessToken: z.string().optional().openapi({
-        example: 'ultra-secret-token',
-    }),
-})
 
 const authActionMessage = z.object({
     message: z.string().openapi({
@@ -47,7 +31,7 @@ export const signIn = createRoute({
     method: 'post',
     request: {
         body: jsonContent(
-            authUserSchema,
+            authUserSchema.omit({data: true}),
             'User to Sign-In',
             true
         )
@@ -55,30 +39,14 @@ export const signIn = createRoute({
     tags,
     responses: {
         [Status.OK]: jsonContent(
-            authActionMessage,
-            'Login successfully'
-        ),
-        [Status.UNAUTHORIZED]: jsonContent(
-            authActionMessage,
-            'Invalid input'
-        ),
-    }
-})
-
-export const signInWithProvider = createRoute({
-    path: '/auth/signin/provider',
-    method: 'post',
-    request: {
-        body: jsonContent(
-            authUserSchema,
-            'User to Sign-In',
-            true
-        )
-    },
-    tags,
-    responses: {
-        [Status.OK]: jsonContent(
-            authActionMessage,
+            z.object({
+                user: z.string().openapi({
+                    example: 'your-token'
+                }),
+                message: z.string().openapi({
+                    example: 'Login successfully',
+                })
+            }),
             'Login successfully'
         ),
         [Status.UNAUTHORIZED]: jsonContent(
@@ -90,7 +58,7 @@ export const signInWithProvider = createRoute({
 
 export const signUp = createRoute({
     path: '/auth/signup',
-    method: 'get',
+    method: 'post',
     request: {
         body: jsonContent(
             authUserSchema,
@@ -99,30 +67,35 @@ export const signUp = createRoute({
         )
     },
     tags,
+    middleware: [
+        databaseAgentMiddleware,
+    ] as const,
     responses: {
-        [200]: jsonContent(
-            authActionMessage,
+        [Status.OK]: jsonContent(
+            z.object({
+                user: z.string().openapi({
+                    example: 'your-token'
+                }),
+                message: z.string().openapi({
+                    example: 'Signup successfully',
+                })
+            }),
             'Signup successfully'
         ),
-        [403]: jsonContent(
+        [Status.UNAUTHORIZED]: jsonContent(
             authActionMessage,
             'Invalid input'
         ),
-    }
-})
-
-export const refresh = createRoute({
-    path: '/auth/refresh',
-    method: 'get',
-    tags,
-    responses: {
-        [200]: jsonContent(
-            authActionMessage,
-            'Refresh successfully'
-        ),
-        [403]: jsonContent(
-            authActionMessage,
-            'Invalid input'
+        [Status.CONFLICT]: jsonContent(
+            z.object({
+                message: z.string().openapi({
+                    example: 'Error while signing up',
+                }),
+                conflicts: z.array(z.string()).openapi({
+                    example: ['email'],
+                })
+            }),
+            'Error while signing up'
         ),
     }
 })
@@ -132,19 +105,19 @@ export const signOut = createRoute({
     method: 'get',
     tags,
     responses: {
-        [200]: jsonContent(
+        [Status.OK]: jsonContent(
             authActionMessage,
             'Signout successfully'
         ),
-        [403]: jsonContent(
+        [Status.UNAUTHORIZED]: jsonContent(
             authActionMessage,
             'Invalid input'
         ),
     }
 })
 
-export const testGetUser = createRoute({
-    path: '/auth/test',
+export const iAm = createRoute({
+    path: '/auth/iam',
     method: 'get',
     tags,
     middleware: [
@@ -152,12 +125,22 @@ export const testGetUser = createRoute({
     ] as const,
     responses: {
         [Status.OK]: jsonContent(
-            authActionMessage,
-            'Test successfully'
+            z.object({
+                userId: z.string().openapi({
+                    example: 'your-id'
+                }),
+                userName: z.string().openapi({
+                    example: 'your-username'
+                }),
+                message: z.string().openapi({
+                    example: 'Signup successfully',
+                })
+            }),
+            'Signup successfully'
         ),
         [Status.UNAUTHORIZED]: jsonContent(
             authActionMessage,
-            'Test failed'
+            'Invalid input'
         ),
     }
 })
@@ -165,5 +148,4 @@ export const testGetUser = createRoute({
 export type SignInRoute = typeof signIn
 export type SignUpRoute = typeof signUp
 export type SignOutRoute = typeof signOut
-export type RefreshRoute = typeof refresh
-export type TestGetUserRoute = typeof testGetUser
+export type IamRoute = typeof iAm

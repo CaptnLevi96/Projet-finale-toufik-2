@@ -1,63 +1,147 @@
-import type { SignInRoute, SignUpRoute, SignOutRoute, RefreshRoute, TestGetUserRoute } from "./auth.routes.ts";
+import type { SignInRoute, SignUpRoute, SignOutRoute, IamRoute } from "./auth.routes.ts";
 import type { V1RouteHandler } from "../types.ts";
 import { Status } from "../../../utils/statusCode.ts";
-import { setAccessTokenCookie, setRefreshTokenCookie, supabase } from "../../../../../lib/authAgent.ts";
+import { setAccessTokenCookie, setIdentityCookie, setRefreshTokenCookie, supabase } from "../../../../../lib/authAgent.ts";
+import { sign } from "../../../../../lib/jwt.ts";
 
 export const signIn: V1RouteHandler<SignInRoute> = async (c) => {
     const user = c.req.valid("json")
     const { data, error } = await supabase.auth.signInWithPassword({ email: user.email, password: user.password })
-    console.log(data, 'data')
-    if(error) {
-        c.json({
+    if(!data.session || error) {
+        return c.json({
             message: 'Error while logging in',
         }, Status.UNAUTHORIZED)
     }
 
     // Set cookies
-    if(data.session) {
-        console.log(data.session, 'data.session')
-        setAccessTokenCookie({c, session: data.session})
-        setRefreshTokenCookie({c, session: data.session})
-    }
-    console.log(data.user)
+    setAccessTokenCookie({c, session: data.session})
+    setRefreshTokenCookie({c, session: data.session})
+    setIdentityCookie({c, session: data.session})
+    
     return c.json({
+        user: await sign({
+            ...data.session.user,
+            exp: new Date(data.session.expires_in + new Date().getTime())
+        }),
         message: 'Logged in successfully',
     }, Status.OK)
 }
 
 export const signUp: V1RouteHandler<SignUpRoute> = async (c) => {
     const user = c.req.valid("json")
-    // TODO: insert user in database
+    const dataBaseAgent = await c.var.databaseAgent
+
+    if(!dataBaseAgent) {
+        console.log('no databaseAgent')
+        return c.json({
+            message: 'Error while signing up',
+        }, Status.UNAUTHORIZED)
+    }
+    const match = []
+    // # Check if email already exists
+    const emailFound = await dataBaseAgent.collection('users').findOne({
+        email: user.email
+    })
+
+    if(emailFound) {
+        match.push('email')
+    }
+    // # Check if username already exists
+    const usernameFound = await dataBaseAgent.collection('users').findOne({
+        username: user.data.username
+    })
+    if(usernameFound) {
+        match.push('username')
+    }
+    // -- If match, report
+    if(match.length) {
+        console.log('match')
+        return c.json({
+            message: 'Error while signing up',
+            conflicts: match,
+        }, Status.CONFLICT)
+    }
+    // # Sign up
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: user.email,
+        password: user.password,
+    })
+    // -- If sign up failed, report
+    if(signUpError || !signUpData.user) {
+        console.log('sign up failed')
+        return c.json({
+            message: 'Error while signing up',
+        }, Status.UNAUTHORIZED)
+    }
+    // # Insert user in database
+    const insertResult = await dataBaseAgent.collection('users').insertOne({
+        _supabaseId: signUpData.user.id,
+        role: 'user',
+        ...user.data,
+        email: user.email,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    })
+    // -- If insert failed, report
+    if(!insertResult.insertedId) {
+        console.log('insert failed')
+        return c.json({
+            message: 'Error while signing up',
+        }, Status.UNAUTHORIZED)
+    }
+    // # Sign in user
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email: user.email, password: user.password })
+    // -- If sign in failed, report
+    if(!signInData.session || signInError) {
+        console.log('sign in failed')
+        return c.json({
+            message: 'Error while signing up',
+        }, Status.UNAUTHORIZED)
+    }
+    // -- Update user in supabase with metadata
+    await supabase.auth.updateUser({ data: { ...signUpData.user, updatedAt: new Date().toISOString() } })
+    // -- Set cookies
+    setAccessTokenCookie({c, session: signInData.session})
+    setRefreshTokenCookie({c, session: signInData.session})
+
+    console.log('signUpData', signUpData.user)
     return c.json({
+        user: await sign({
+            ...signInData.user,
+            exp: new Date(signInData.session.expires_in + new Date().getTime())
+        }),
         message: 'Signup successfully',
     }, Status.OK)
 }
 
 export const signOut: V1RouteHandler<SignOutRoute> = async (c) => {
-    // TODO: delete user from database
+    // # Sign out
+    const { error: signOutError } = await supabase.auth.signOut()
+    // -- If sign out failed, report
+    if(signOutError) {
+        return c.json({
+            message: 'Error while signing out',
+        }, Status.UNAUTHORIZED)
+    }
     return c.json({
         message: 'Signout successfully',
     }, Status.OK)
 }
 
-export const refresh: V1RouteHandler<RefreshRoute> = async (c) => {
-    // TODO: refresh user in database
-    return c.json({
-        message: 'Refresh successfully',
-    }, Status.OK)
+export const iAm: V1RouteHandler<IamRoute> = async (c) => {
+    const user = c.var.user ?? null
+    // -- If no user, report
+    if(!user) {
+        return c.json({
+            message: 'Error while signing out',
+        }, Status.UNAUTHORIZED)
+    } else {
+        return c.json({
+            userId: user.id,
+            userName: user.user_metadata.username,
+            message: 'Signed in successfully',
+        }, Status.OK)
+    }
 }
 
-export const testGetUser: V1RouteHandler<TestGetUserRoute> = async (c) => {
-    const user = await c.var.user ?? null
-    if(!user) {
-        console.log(user)
-        return c.json({
-            message: 'Error while getting user',
-            data: user
-        }, Status.UNAUTHORIZED)
-    }
-    return c.json({
-        message: 'User successfully retrieved',
-        data: user
-    }, Status.OK)
-}
+

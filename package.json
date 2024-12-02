@@ -2,7 +2,8 @@
   "name": "Projet-finale-toufik-2",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts"
+    "dev:api": "tsx watch src/api.ts",
+    "dev:web": "tsx watch src/web.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",

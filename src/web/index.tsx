@@ -1,46 +1,46 @@
 import { Hono } from 'hono'
-import { Content } from './views/home.tsx'
-import { hc } from 'hono/client'
+import { jsxRenderer } from 'hono/jsx-renderer'
+import { Header } from './components/header.tsx'
+import { Login } from './views/login.tsx'
 import type { ApiV1Type } from '../api/routes/v1/index.ts'
-import { getCookie } from 'hono/cookie'
+import { hc } from 'hono/client'
+import { Signup } from './views/signup.tsx'
+
+export const client = hc<ApiV1Type>('http://localhost:3001/')
 export const web = new Hono()
 
-
-const client = hc<ApiV1Type>('http://localhost:3000/')
+web.get(
+  '*',
+  jsxRenderer(({ children }) => {
+    return (
+      <html>
+        <body>
+          <Header />
+          <div>{children}</div>
+        </body>
+      </html>
+    )
+  })
+)
 
 web.get('/', (c) => {
-  const messages = "IM A MESSAGE"
-  return c.html(<Content messages="bonjour" />)
+  return c.render(<div id="root">
+    <h1>Hello Hono!</h1>
+  </div>)
 })
 
-web.get('/test', async (c) => {
-  const data = await client.api.v1.auth.signin.$post(
-    {
-      json: {
-        email: 'fake@user.com',
-        password: 'password',
-      }
-    }
-  ).then((r) => r.json())
-
-  return c.html(
-    <div>
-      <h1>Login</h1>
-      {data?.message}
-    </div>
-  )
+web.get('/about', (c) => {
+  return c.render(<h1>About me!</h1>)
 })
 
-web.get('/test2', async (c) => {
-  const accessToken = getCookie(c, 'access_token')
-  console.log(accessToken)
-  const data = await client.api.v1.auth.test.$get().then((r) => r.json())
-  console.log(data)
-  return c.html(
-    <div>
+web.get('/login', (c) => {
+  const url = client.api.v1.auth.signin.$url({})
+  return c.render(<Login requestUrl={url.origin + url.pathname} />)
+})
 
-    </div>
-  )
+web.get('/signup', (c) => {
+  const url = client.api.v1.auth.signup.$url({})
+  return c.render(<Signup requestUrl={url.origin + url.pathname} />)
 })
 
 export default web

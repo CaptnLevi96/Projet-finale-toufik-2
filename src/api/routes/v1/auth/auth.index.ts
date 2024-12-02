@@ -4,7 +4,8 @@ import * as handlers from "./auth.handlers.ts"
 
 const router = createV1Router()
 .openapi(routes.signIn, handlers.signIn)
-.openapi(routes.testGetUser, handlers.testGetUser)
-
+.openapi(routes.signUp, handlers.signUp)
+.openapi(routes.signOut, handlers.signOut)
+.openapi(routes.iAm, handlers.iAm)
 
 export default router

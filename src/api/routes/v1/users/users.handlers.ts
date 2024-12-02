@@ -6,8 +6,6 @@ type UserRole = "admin" | "user";
 
 export const read: V1RouteHandler<ReadUsersRoute> = async (c) => {
     const { id } = c.req.valid("param")
-    console.log(c.var.user)
-    console.error('wtf')
     if (id) {
         return c.json({
             id,
@@ -24,7 +22,6 @@ export const read: V1RouteHandler<ReadUsersRoute> = async (c) => {
 }
 
 export const readList: V1RouteHandler<ReadListUsersRoute> = async (c) => {
-    console.log(c.var.user)
     return c.json([{
         id: 1,
         name: 'John Doe',

@@ -1,6 +1,6 @@
 import { createMiddleware } from "hono/factory"
 import { Status } from "../utils/statusCode.ts"
-import { getAccessTokenCookie, getRefreshTokenCookie, supabase } from "../../../lib/authAgent.ts"
+import { getAccessTokenCookie, getRefreshTokenCookie, setIdentityCookie, supabase } from "../../../lib/authAgent.ts"
 import type { User } from '@supabase/supabase-js';
 
 
@@ -36,8 +36,9 @@ export const authVerify = createMiddleware(async (c, next) => {
             }, Status.UNAUTHORIZED)
         }
         // -- If refreshed, set new token
-        if( refreshed.user) {
+        if( refreshed.session && refreshed.user) {
             c.set('user', refreshed.user)
+            setIdentityCookie({c, session: refreshed.session})
         }
     }
     await next()

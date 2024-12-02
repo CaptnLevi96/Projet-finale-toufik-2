@@ -5,13 +5,15 @@ serveConfig()
 
 const EnvSchema = z.object({
     NODE_ENV: z.string().default('development'),
-    PORT: z.coerce.number().default(3000),
+    PORT_API: z.coerce.number().default(3001),
+    PORT_WEB: z.coerce.number().default(3000),
     DATABASE_URL: z.string().min(1),
     DATABASE_USER: z.string().min(1),
     DATABASE_NAME: z.string().min(1),
     DATABASE_PASSWORD: z.string().min(1),
     SUPABASE_URL: z.string().min(1),
     SUPABASE_SERVICE_ROLE: z.string().min(1),
+    JWT_SECRET: z.string().min(1),
 })
 
 export type Env = z.infer<typeof EnvSchema>
