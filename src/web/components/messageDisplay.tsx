@@ -3,6 +3,7 @@ import { client } from "../index.tsx"
 import { html } from "hono/html"
 import type { userSchema } from "../../api/routes/v1/users/users.routes.ts"
 import { Fragment } from "hono/jsx/jsx-runtime"
+import { LikesComponent } from "./like.tsx"
 
 type MessageData = {
     _id: string,
@@ -16,24 +17,23 @@ type MessageData = {
 type MessageProps = {
     title: string,
     message: MessageData,
+    role: string,
+    supabaseId: string,
 }
 
-export const CommentDisplay = ({message}: {message: MessageData}) => {
+export const CommentDisplay = ({messageId, comment, role, supabaseId}: {messageId: string, comment: MessageData, role: string, supabaseId: string}) => {
     return (
         <div>
             <div>
-                <p>Comment by {message.userinfo[0].username}</p>
-                <div>
-                    <button>+</button>
-                    <p>{message.likes}</p>
-                    <button>-</button>
-                </div>
+                <p>Comment by {comment.userinfo[0].username}</p>
             </div>
             <div>
-                <p>{message.text}</p>
-                <div>
-                    <button data-comment-id={message._id} onclick="deleteCommentAction(event)"> Delete </button>
-                </div>
+                <p>{comment.text}</p>
+                {role && role === 'admin' &&
+                    <div>
+                        <button data-comment-id={comment._id} data-text={comment.text}onclick="deleteCommentAction(event)"> Delete </button>
+                    </div>
+                }
             </div>
         </div>
     )
@@ -59,7 +59,7 @@ export const CommentDisplayScript = () => {
     )
 }
 
-export const MessageDisplay = ({title, message}: MessageProps) => {
+export const MessageDisplay = ({title, message, role, supabaseId}: MessageProps) => {
     return (
         <div>
             <div>
@@ -67,16 +67,18 @@ export const MessageDisplay = ({title, message}: MessageProps) => {
                 <p>{message.userinfo[0].username}</p>
                 <p>{message.createdAt}</p>
                 <div>
-                    <button>+</button>
-                    <p>{message.likes}</p>
-                    <button>-</button>
+                    {supabaseId && (
+                        <LikesComponent supabaseId={supabaseId} messageId={message._id} />
+                    )}
                 </div>
             </div>
             <div>
                 <p>{message.text}</p>
-                <div>
-                    <button data-message-id={message._id} data-text={message.text} data-likes={message.likes} onclick="deleteMessageAction(event)"> Delete </button>
-                </div>
+                {role && role === 'admin' && (
+                    <div>
+                        <button data-message-id={message._id} data-text={message.text} data-likes={message.likes} onclick="deleteMessageAction(event)"> Delete </button>
+                    </div>
+                )}
             </div>
         </div>
     )

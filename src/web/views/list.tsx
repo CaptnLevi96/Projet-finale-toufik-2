@@ -1,7 +1,8 @@
 import { client } from "../index.tsx"
 import { MessageDisplay, MessageDisplayScript } from "../components/messageDisplay.tsx"
+import { LikesComponentScript } from "../components/like.tsx"
 
-export const List = async () => {
+export const List = async ({identity}: {identity: any}) => {
     const messages = await client.api.v1.messages.$get().then((r) => {
         if(r.status === 200){
             return r.json()
@@ -19,12 +20,15 @@ export const List = async () => {
     }
     return (
         <div>
+            <LikesComponentScript />
             <MessageDisplayScript />
            {messages.map((message) => {
             return (
                 <MessageDisplay
                     title={message.title}
                     message={message}
+                    role={identity?.role ?? ''}
+                    supabaseId={identity?._supabaseId ?? ''}
                 />
             )
            })}

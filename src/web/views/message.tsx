@@ -1,8 +1,9 @@
 import { client } from "../index.tsx"
 import { html } from "hono/html"
 import { MessageDisplay, MessageDisplayScript, CommentDisplay, CommentDisplayScript } from "../components/messageDisplay.tsx"
+import { LikesComponentScript } from "../components/like.tsx"
 
-export const Message = async ({id}: {id: string}) => {
+export const Message = async ({id, identity}: {id: string, identity: any}) => {
     const message = await client.api.v1.messages[":id"].$get({
         param: { id }
     }).then((r) => {
@@ -62,16 +63,22 @@ export const Message = async ({id}: {id: string}) => {
             <div>
                 <button onclick="openCommentModal()"> Add a comment </button>
             </div>
+            <LikesComponentScript />
             <MessageDisplayScript />
             <MessageDisplay
                 title={message.title}
                 message={message}
+                role={identity?.role ?? ''}
+                supabaseId={identity?._supabaseId ?? ''}
             />
             <CommentDisplayScript />
             {message.comments.map((comment: any) => {
                 return (
                     <CommentDisplay
-                        message={comment}
+                        comment={comment}
+                        messageId={message._id}
+                        role={identity?.role ?? ''}
+                        supabaseId={identity?._supabaseId ?? ''}
                     />
                 )
             })}

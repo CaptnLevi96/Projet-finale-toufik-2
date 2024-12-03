@@ -22,7 +22,7 @@ export async function Header() {
                     <button 
                         id='new-message-button'
                         disabled={!identity}
-                     >New Message</button>
+                    >New Message</button>
                 </div>
                 <div>
                     <input type="text" placeholder="Search..." />

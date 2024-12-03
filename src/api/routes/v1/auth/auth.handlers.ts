@@ -136,7 +136,7 @@ export const iAm: V1RouteHandler<IamRoute> = async (c) => {
         })
         if(userInfo) {
             return c.json({
-                id: supabaseUser.id,
+                _supabaseId: supabaseUser.id,
                 role: userInfo.role,
                 username: userInfo.username,
                 message: 'Signed in successfully',

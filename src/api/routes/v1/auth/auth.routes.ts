@@ -127,7 +127,7 @@ export const iAm = createRoute({
     responses: {
         [Status.OK]: jsonContent(
             z.object({
-                id: z.string().openapi({
+                _supabaseId: z.string().openapi({
                     example: 'your-id'
                 }),
                 role: z.string().openapi({

@@ -2,6 +2,7 @@
 import createV1App from './createApp.ts'
 import userRouter from './users/users.index.ts'
 import authRouter from './auth/auth.index.ts'
+import likesRouter from './likes/likes.index.ts'
 import messagesRouter from './messages/messages.index.ts'
 import commentsRouter from './comments/comments.index.ts'
 
@@ -10,7 +11,8 @@ const v1 = createV1App()
     .route('/api/v1', authRouter)
     .route('/api/v1', messagesRouter)
     .route('/api/v1', userRouter)
-    .route('/api/v1', commentsRouter)  // Ajout du router des commentaires
+    .route('/api/v1', likesRouter)
+    .route('/api/v1', commentsRouter)
     .get('/api/v1', (c) => {
         return c.redirect('/api/v1/ui')
     })
