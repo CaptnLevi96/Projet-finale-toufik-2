@@ -122,14 +122,18 @@ export const iAm = createRoute({
     tags,
     middleware: [
         authVerify,
+        databaseAgentMiddleware,
     ] as const,
     responses: {
         [Status.OK]: jsonContent(
             z.object({
-                userId: z.string().openapi({
+                id: z.string().openapi({
                     example: 'your-id'
                 }),
-                userName: z.string().openapi({
+                role: z.string().openapi({
+                    example: 'your-role'
+                }),
+                username: z.string().openapi({
                     example: 'your-username'
                 }),
                 message: z.string().openapi({

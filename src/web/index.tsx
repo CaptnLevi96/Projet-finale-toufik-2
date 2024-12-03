@@ -1,10 +1,13 @@
 import { Hono } from 'hono'
 import { jsxRenderer } from 'hono/jsx-renderer'
+import { Style, css } from 'hono/css'
 import { Header } from './components/header.tsx'
 import { Login } from './views/login.tsx'
 import type { ApiV1Type } from '../api/routes/v1/index.ts'
 import { hc } from 'hono/client'
 import { Signup } from './views/signup.tsx'
+import { List } from './views/list.tsx'
+import { Modal } from './components/modal.tsx'
 
 export const client = hc<ApiV1Type>('http://localhost:3001/')
 export const web = new Hono()
@@ -18,19 +21,16 @@ web.get(
           <Header />
           <div>{children}</div>
         </body>
+        <Modal />
       </html>
     )
   })
 )
 
 web.get('/', (c) => {
-  return c.render(<div id="root">
-    <h1>Hello Hono!</h1>
-  </div>)
-})
-
-web.get('/about', (c) => {
-  return c.render(<h1>About me!</h1>)
+  return c.render(
+    <List />
+  )
 })
 
 web.get('/login', (c) => {

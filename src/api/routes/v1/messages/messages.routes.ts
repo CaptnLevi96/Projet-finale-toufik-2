@@ -1,28 +1,40 @@
 import { Status } from './../../../utils/statusCode.ts';
 import { createRoute, z } from '@hono/zod-openapi'
 import { defaultErrorJsonContent, jsonContent } from '../../../utils/apiResponses.ts'
-import { userSchema } from '../users/users.routes.ts'
 import { databaseAgentMiddleware } from '../../../middleware/mongoAgent.middleware.ts';
+import { authVerify } from '../../../middleware/authVerify.middleware.ts';
+import { userSchema } from '../users/users.routes.ts';
 
 export const messageSchema = z.object({
-    id: z.coerce.number().openapi({
-        example: 456,
+    _id: z.string().min(1).openapi({
+        example: "123",
         param: {
             name: 'id',
             in: 'path',
         }
     }),
-    userId: z.coerce.number().openapi({
-        example: 123,
+    _supabaseId: z.string().min(1).openapi({
+        example: "123",
         description: "ID of the message creator",
     }),
-    content: z.string().min(1).openapi({
+    likes: z.number().openapi({
+        example: 0,
+        description: 'Number of likes'
+    }),
+    title: z.string().min(1).openapi({
+        example: 'Message title',
+        description: 'Message title'
+    }),
+    text: z.string().min(1).openapi({
         example: 'Message content',
         description: 'Message content'
     }),
-    createdAt: z.string().datetime().openapi({
+    createdAt: z.string().openapi({
         example: '2024-03-26T10:30:00Z',
         description: 'Creation date'
+    }),
+    userinfo: z.array(userSchema).openapi({
+        description: 'User information'
     }),
 })
 
@@ -37,7 +49,7 @@ export const read = createRoute({
     ] as const,
     request: {
         params: z.object({
-            id: messageSchema.shape.id
+            id: messageSchema.shape._supabaseId
         })
     },
     responses: {
@@ -57,11 +69,6 @@ export const readList = createRoute({
     middleware: [
         databaseAgentMiddleware
     ] as const,
-    request: {
-        query: z.object({
-            userId: z.string().optional()
-        })
-    },
     responses: {
         [Status.OK]: jsonContent(
             z.array(messageSchema),
@@ -76,18 +83,19 @@ export const create = createRoute({
     method: 'post',
     tags,
     middleware: [
-        databaseAgentMiddleware
+        databaseAgentMiddleware,
+        authVerify
     ] as const,
     request: {
         body: jsonContent(
-            messageSchema.omit({ id: true, createdAt: true }),
+            messageSchema.omit({ _id: true, _supabaseId: true, likes: true,  createdAt: true, userinfo: true }),
             'Message to create',
             true
         )
     },
     responses: {
         [Status.CREATED]: jsonContent(
-            messageSchema,
+            messageSchema.omit({ userinfo: true }),
             'Message created'
         ),
         [Status.UNPROCESSABLE_ENTITY]: defaultErrorJsonContent("Invalid input"),
@@ -104,10 +112,10 @@ export const remove = createRoute({
     ] as const,
     request: {
         params: z.object({
-            id: messageSchema.shape.id
+            id: messageSchema.shape._supabaseId
         }),
         query: z.object({
-            userId: messageSchema.shape.userId
+            userId: messageSchema.shape._supabaseId
         })
     },
     responses: {

@@ -1,4 +1,4 @@
-import type { CreateMessageRoute, ReadListMessagesRoute, ReadMessageRoute, DeleteMessageRoute } from "./messages.routes.ts";
+import type { CreateMessageRoute, ReadListMessagesRoute, ReadMessageRoute, DeleteMessageRoute, messageSchema } from "./messages.routes.ts";
 import type { V1RouteHandler } from "../types.ts";
 import { Status } from "../../../utils/statusCode.ts";
 
@@ -6,10 +6,13 @@ export const read: V1RouteHandler<ReadMessageRoute> = async (c) => {
     const { id } = c.req.valid("param")
     if (id) {
         return c.json({
-            id,
-            userId: 1,
-            content: 'Hello world!',
-            createdAt: new Date().toISOString()
+            _id: '123',
+            _supabaseId: '123',
+            likes: 0,
+            title: 'Hello world!',
+            text: 'Hello world!',
+            createdAt: new Date().toISOString(),
+            userinfo: [{ username: 'John Doe' } as any]
         }, Status.OK)
     } else {
         return c.json({
@@ -19,34 +22,50 @@ export const read: V1RouteHandler<ReadMessageRoute> = async (c) => {
     }
 }
 
-export const readList: V1RouteHandler<ReadListMessagesRoute> = async (c) => {
-    const { userId } = c.req.valid("query")
-    
-    const messages = [{
-        id: 1,
-        userId: 1,
-        content: 'Hello world!',
-        createdAt: new Date().toISOString()
-    }]
-
-    if (userId) {
-        const filteredMessages = messages.filter(message => 
-            message.userId === Number(userId)
-        )
-        // Au lieu de retourner NOT_FOUND, on retourne un tableau vide
-        return c.json(filteredMessages, Status.OK)
+export const readList: V1RouteHandler<ReadListMessagesRoute> = async (c) => {    
+    if(!c.var.databaseAgent) {
+        return c.json({
+            success: false,
+            message: "Database not found",
+        }, Status.UNAUTHORIZED)
     }
+    const databaseAgent = await c.var.databaseAgent
+    const messages = await databaseAgent.collection('messages').aggregate([
+        {
+            $lookup: {
+                from: 'users',
+                localField: '_supabaseId',
+                foreignField: '_supabaseId',
+                as: 'userinfo'
+            }
+        }
+    ]).toArray()
 
-    return c.json(messages, Status.OK)
+    return c.json(messages, Status.OK) as any
 }
 
 export const create: V1RouteHandler<CreateMessageRoute> = async (c) => {
     const message = c.req.valid("json")
+    const user = c.var.user
+    if(!user || !c.var.databaseAgent) {
+        return c.json({
+            success: false,
+            message: "User not found",
+        }, Status.UNAUTHORIZED)
+    }
+    const databaseAgent = await c.var.databaseAgent
+    const messageInput = {
+        _supabaseId: user.id,
+        title: message.title,
+        text: message.text,
+        likes: 0,
+        createdAt: new Date().toISOString()
+    }
+    const result = await databaseAgent.collection('messages').insertOne(messageInput)
     // TODO: insert message in database
     return c.json({
-        ...message,
-        id: 1,
-        createdAt: new Date().toISOString()
+        _id: result.insertedId.toString(),
+        ...messageInput,
     }, Status.CREATED)
 }
 

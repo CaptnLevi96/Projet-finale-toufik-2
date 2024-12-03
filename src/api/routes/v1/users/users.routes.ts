@@ -15,7 +15,7 @@ export const userSchema = z.object({
     role: z.enum(['admin', 'user', 'owner']).openapi({
         example: 'user',
     }),
-    name: z.string().openapi({
+    username: z.string().openapi({
         example: 'John Doe',
     }),
     email: z.string().openapi({

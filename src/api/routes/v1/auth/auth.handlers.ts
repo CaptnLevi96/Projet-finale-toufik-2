@@ -129,18 +129,28 @@ export const signOut: V1RouteHandler<SignOutRoute> = async (c) => {
 }
 
 export const iAm: V1RouteHandler<IamRoute> = async (c) => {
-    const user = c.var.user ?? null
-    // -- If no user, report
-    if(!user) {
+    if(c.var.databaseAgent && c.var.user) {
+        const supabaseUser = c.var.user
+        const dataBaseAgent = await c.var.databaseAgent
+        const userInfo = await dataBaseAgent.collection('users').findOne({
+            _supabaseId: supabaseUser.id
+        })
+        if(userInfo) {
+            return c.json({
+                id: supabaseUser.id,
+                role: userInfo.role,
+                username: userInfo.username,
+                message: 'Signed in successfully',
+            }, Status.OK)
+        } else {
+            return c.json({
+                message: 'Error while signing out',
+            }, Status.UNAUTHORIZED)
+        }
+    } else {
         return c.json({
             message: 'Error while signing out',
         }, Status.UNAUTHORIZED)
-    } else {
-        return c.json({
-            userId: user.id,
-            userName: user.user_metadata.username,
-            message: 'Signed in successfully',
-        }, Status.OK)
     }
 }
 
