@@ -61,6 +61,5 @@ export async function setIdentityCookie(req: AuthCookie) {
 }
 export function getIdentityCookie(c: Context) {
     const token = getCookie(c, _identityCookieName) ?? ""
-    console.log(token, 'getIdentityCookie')
     return token
 }

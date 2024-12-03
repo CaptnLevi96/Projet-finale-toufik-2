@@ -65,8 +65,10 @@ export const Modal = () => {
             <div id="modal">
             <div id="modal-content">
                 <div id="modal-header">
-                <h2>Modal Title</h2>
-                <button id="modal-toggle" onclick="closeModal()">X</button>
+                    <div id="modal-title">
+                        <h2>Modal Title</h2>
+                    </div>
+                    <button id="modal-toggle" onclick="closeModal()">X</button>
                 </div>
                 <div id="modal-body">
                 </div>

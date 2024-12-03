@@ -1,19 +1,44 @@
 import type { CreateMessageRoute, ReadListMessagesRoute, ReadMessageRoute, DeleteMessageRoute, messageSchema } from "./messages.routes.ts";
 import type { V1RouteHandler } from "../types.ts";
 import { Status } from "../../../utils/statusCode.ts";
+import { ObjectId } from "mongodb";
 
 export const read: V1RouteHandler<ReadMessageRoute> = async (c) => {
+    console.log('in read')
     const { id } = c.req.valid("param")
-    if (id) {
+    console.log(id)
+    if(!c.var.databaseAgent || !c.var.user) {
         return c.json({
-            _id: '123',
-            _supabaseId: '123',
-            likes: 0,
-            title: 'Hello world!',
-            text: 'Hello world!',
-            createdAt: new Date().toISOString(),
-            userinfo: [{ username: 'John Doe' } as any]
-        }, Status.OK)
+            success: false,
+            message: "Unauthorized access",
+        }, Status.UNAUTHORIZED)
+    }
+    const databaseAgent = await c.var.databaseAgent
+    if (id) {
+        const message = await databaseAgent.collection('messages').aggregate([
+            {
+                $match: {
+                    _id: new ObjectId(id)
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: '_supabaseId',
+                    foreignField: '_supabaseId',
+                    as: 'userinfo'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'comments',
+                    localField: '_id',
+                    foreignField: '_messageId',
+                    as: 'comments'
+                },
+            }
+        ]).toArray()
+        return c.json(message, Status.OK) as any
     } else {
         return c.json({
             success: false,
@@ -70,13 +95,19 @@ export const create: V1RouteHandler<CreateMessageRoute> = async (c) => {
 }
 
 export const remove: V1RouteHandler<DeleteMessageRoute> = async (c) => {
-    const { id } = c.req.valid("param")
-    const { userId } = c.req.valid("query")
-
+    const { id } = c.req.valid("param") as any
+    if(!c.var.databaseAgent || !c.var.user) {
+        return c.json({
+            success: false,
+            message: "Unauthorized access",
+        }, Status.UNAUTHORIZED)
+    }
+    const databaseAgent = await c.var.databaseAgent
     if (id) {
-        // TODO: Check if message exists and belongs to user
-        // For now, simulating a successful deletion
-        return c.body(null, Status.NO_CONTENT)
+        const res = await databaseAgent.collection('messages').deleteOne({ _id: new ObjectId(id) })
+        return c.json({
+            message: 'Message successfully deleted',
+        }, Status.OK)
     } else {
         return c.json({
             success: false,

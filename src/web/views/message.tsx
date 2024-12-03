@@ -1,55 +1,77 @@
-type MessageData = {
-    text: string,
-    username: string,
-    likes: number,
-    createdAt: string,
-}
+import { client } from "../index.tsx"
+import { html } from "hono/html"
+import { MessageDisplay, MessageDisplayScript } from "../components/messageDisplay.tsx"
 
-type MessageProps = {
-    title: string,
-    message: MessageData,
-    comments: MessageData[],
-}
-
-export const Comment = ({message}: {message: MessageData}) => {
+export const Message = async ({id}: {id: string}) => {
+    const messages = await client.api.v1.messages.$get({
+        params: {
+            id
+        }
+    }).then((r) => {
+        if(r.status === 200){
+            return r.json()
+        }else {
+            return null
+        }
+    })
+    const message = messages
+    if(!messages) {
+        return (
+            <div>
+                <h1>Message does not exist</h1>
+            </div>
+        )
+    }
     return (
         <div>
+            {html`
+                <script>
+                    async function openCommentModal() {
+                        const modalBody = document.getElementById('modal-body')
+                        const modalTitle = document.getElementById('modal-title')
+                        const modalForm = document.createElement('form')
+                        modalBody.innerHTML = ''
+                        modalTitle.innerHTML = '<h1>New comment</h1>'
+                        modalForm.innerHTML = '<input type="text" name="title" placeholder="Title" /><br /><textarea name="text" placeholder="Text"></textarea><br /><button id="submit-button">Submit</button>'
+                        modalForm.addEventListener('submit', newCommentAction)
+                        modalBody.appendChild(modalForm)
+                        openModal()
+                    }
+                    function newCommentAction(event) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        console.log('newCommentAction')
+                        const formData = new FormData(event.target)
+                        const json = {
+                            title: formData.get('title'),
+                            text: formData.get('text'),
+                            messageId: '${message._id}'
+                        }
+                        const url = '${client.api.v1.comments.$url({}).origin + client.api.v1.comments.$url({}).pathname}'
+                        fetch(url, {
+                            method: 'post',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(json)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if(data._id) {
+                                window.location.href = '/'
+                            }
+                        })
+                    }
+                </script>
+            `}
             <div>
-                <p>{message.username}</p>
-                <div>
-                    <button>+</button>
-                    <p>{message.likes}</p>
-                    <button>-</button>
-                </div>
+                <button onclick="openCommentModal()"> Add a comment </button>
             </div>
-            <div>
-                <p>{message.text}</p>
-                <div>
-                    <button> Delete </button>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-export const MessageDisplay = ({title, message, comments}: MessageProps) => {
-    return (
-        <div>
-            <div>
-                <h1>{title}</h1>
-                <p>{message.username}</p>
-                <div>
-                    <button>+</button>
-                    <p>{message.likes}</p>
-                    <button>-</button>
-                </div>
-            </div>
-            <div>
-                <p>{message.text}</p>
-                <div>
-                    <button> Delete </button>
-                </div>
-            </div>
+            <MessageDisplayScript />
+            <MessageDisplay
+                title={messages[0].title}
+                message={messages[0]}
+            />
         </div>
     )
 }

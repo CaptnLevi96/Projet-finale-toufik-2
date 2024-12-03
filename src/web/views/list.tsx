@@ -1,5 +1,5 @@
 import { client } from "../index.tsx"
-import { MessageDisplay } from "../components/messageDisplay.tsx"
+import { MessageDisplay, MessageDisplayScript } from "../components/messageDisplay.tsx"
 
 export const List = async () => {
     const messages = await client.api.v1.messages.$get().then((r) => {
@@ -19,6 +19,7 @@ export const List = async () => {
     }
     return (
         <div>
+            <MessageDisplayScript />
            {messages.map((message) => {
             return (
                 <MessageDisplay

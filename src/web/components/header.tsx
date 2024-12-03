@@ -87,7 +87,10 @@ export async function Header() {
                     event.preventDefault()
                     event.stopPropagation()
                     const modalBody = document.getElementById('modal-body')
+                    const modalTitle = document.getElementById('modal-title')
                     const modalForm = document.createElement('form')
+                    modalBody.innerHTML = ''
+                    modalTitle.innerHTML = '<h1>New message</h1>'
                     modalForm.innerHTML = '<input type="text" name="title" placeholder="Title" /><br /><textarea name="text" placeholder="Text"></textarea><br /><button id="submit-button">Submit</button>'
                     modalForm.addEventListener('submit', newMessageAction)
                     modalBody.appendChild(modalForm)

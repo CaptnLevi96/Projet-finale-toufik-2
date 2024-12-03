@@ -49,7 +49,7 @@ export const read = createRoute({
     ] as const,
     request: {
         params: z.object({
-            id: messageSchema.shape._supabaseId
+            id: messageSchema.shape._id
         })
     },
     responses: {
@@ -108,20 +108,21 @@ export const remove = createRoute({
     method: 'delete',
     tags,
     middleware: [
-        databaseAgentMiddleware
+        databaseAgentMiddleware,
+        authVerify,
     ] as const,
     request: {
         params: z.object({
-            id: messageSchema.shape._supabaseId
-        }),
-        query: z.object({
-            userId: messageSchema.shape._supabaseId
+            id: messageSchema.shape._id
         })
     },
     responses: {
-        [Status.NO_CONTENT]: {
-            description: 'Message successfully deleted'
-        },
+        [Status.OK]: jsonContent(
+            z.object({
+                message: z.string(),
+            }),
+            'Message successfully deleted'
+        ),
         [Status.NOT_FOUND]: defaultErrorJsonContent("Message not found"),
         [Status.UNAUTHORIZED]: defaultErrorJsonContent("Unauthorized - Only the owner can delete their message"),
     }
