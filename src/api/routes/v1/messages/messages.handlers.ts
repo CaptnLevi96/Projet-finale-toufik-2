@@ -6,8 +6,7 @@ import { ObjectId } from "mongodb";
 export const read: V1RouteHandler<ReadMessageRoute> = async (c) => {
     console.log('in read')
     const { id } = c.req.valid("param")
-    console.log(id)
-    if(!c.var.databaseAgent || !c.var.user) {
+    if(!c.var.databaseAgent) {
         return c.json({
             success: false,
             message: "Unauthorized access",
@@ -34,10 +33,18 @@ export const read: V1RouteHandler<ReadMessageRoute> = async (c) => {
                     from: 'comments',
                     localField: '_id',
                     foreignField: '_messageId',
+                    pipeline: [{
+                        $lookup: {
+                            from: 'users',
+                            localField: '_supabaseId',
+                            foreignField: '_supabaseId',
+                            as: 'userinfo'
+                        }
+                    }],
                     as: 'comments'
                 },
             }
-        ]).toArray()
+        ]).toArray().then(r => r[0])
         return c.json(message, Status.OK) as any
     } else {
         return c.json({
@@ -105,6 +112,8 @@ export const remove: V1RouteHandler<DeleteMessageRoute> = async (c) => {
     const databaseAgent = await c.var.databaseAgent
     if (id) {
         const res = await databaseAgent.collection('messages').deleteOne({ _id: new ObjectId(id) })
+        // delete all associated comments
+        const comments = await databaseAgent.collection('comments').deleteMany({ _messageId: new ObjectId(id) })
         return c.json({
             message: 'Message successfully deleted',
         }, Status.OK)

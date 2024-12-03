@@ -4,6 +4,7 @@ import { defaultErrorJsonContent, jsonContent } from '../../../utils/apiResponse
 import { databaseAgentMiddleware } from '../../../middleware/mongoAgent.middleware.ts';
 import { authVerify } from '../../../middleware/authVerify.middleware.ts';
 import { userSchema } from '../users/users.routes.ts';
+import { commentSchema } from '../comments/comments.routes.ts';
 
 export const messageSchema = z.object({
     _id: z.string().min(1).openapi({
@@ -36,6 +37,9 @@ export const messageSchema = z.object({
     userinfo: z.array(userSchema).openapi({
         description: 'User information'
     }),
+    comments: z.array(commentSchema).openapi({
+        description: 'Comments'
+    }),
 })
 
 const tags = ["Messages"]
@@ -45,7 +49,7 @@ export const read = createRoute({
     method: 'get',
     tags,
     middleware: [
-        databaseAgentMiddleware
+        databaseAgentMiddleware,
     ] as const,
     request: {
         params: z.object({
@@ -88,14 +92,14 @@ export const create = createRoute({
     ] as const,
     request: {
         body: jsonContent(
-            messageSchema.omit({ _id: true, _supabaseId: true, likes: true,  createdAt: true, userinfo: true }),
+            messageSchema.omit({ _id: true, _supabaseId: true, likes: true,  createdAt: true, userinfo: true, comments: true }),
             'Message to create',
             true
         )
     },
     responses: {
         [Status.CREATED]: jsonContent(
-            messageSchema.omit({ userinfo: true }),
+            messageSchema.omit({ userinfo: true, comments: true }),
             'Message created'
         ),
         [Status.UNPROCESSABLE_ENTITY]: defaultErrorJsonContent("Invalid input"),

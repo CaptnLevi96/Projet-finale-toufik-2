@@ -18,11 +18,11 @@ type MessageProps = {
     message: MessageData,
 }
 
-export const Comment = ({message}: {message: MessageData}) => {
+export const CommentDisplay = ({message}: {message: MessageData}) => {
     return (
         <div>
             <div>
-                <p>{message.userinfo[0].username}</p>
+                <p>Comment by {message.userinfo[0].username}</p>
                 <div>
                     <button>+</button>
                     <p>{message.likes}</p>
@@ -32,10 +32,30 @@ export const Comment = ({message}: {message: MessageData}) => {
             <div>
                 <p>{message.text}</p>
                 <div>
-                    <button> Delete </button>
+                    <button data-comment-id={message._id} onclick="deleteCommentAction(event)"> Delete </button>
                 </div>
             </div>
         </div>
+    )
+}
+
+export const CommentDisplayScript = () => {
+    const origin =  client.api.v1.comments.$url({}).origin
+    const url = origin + client.api.v1.comments.$url({}).pathname
+    return (
+        <Fragment>
+            {html`
+                <script>
+                    async function deleteCommentAction(event) {
+                        const commentId = event.target.dataset.commentId;
+                        const url = "${url}" + '/' + commentId
+                        await fetch(url, {
+                            method: 'delete',
+                        }).then(()=> {window.location.reload()})
+                    }
+                </script>
+            `}
+        </Fragment>
     )
 }
 
@@ -55,7 +75,7 @@ export const MessageDisplay = ({title, message}: MessageProps) => {
             <div>
                 <p>{message.text}</p>
                 <div>
-                    <button data-message-id={message._id} data-text={message.text} data-likes={message.likes} onclick="deleteAction(event)"> Delete </button>
+                    <button data-message-id={message._id} data-text={message.text} data-likes={message.likes} onclick="deleteMessageAction(event)"> Delete </button>
                 </div>
             </div>
         </div>
@@ -69,7 +89,7 @@ export const MessageDisplayScript = () => {
         <Fragment>
             {html`
                 <script>
-                    async function deleteAction(event) {
+                    async function deleteMessageAction(event) {
                         const messageId = event.target.dataset.messageId;
                         const url = "${url}" + '/' + messageId
                         await fetch(url, {

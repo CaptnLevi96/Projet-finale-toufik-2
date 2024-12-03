@@ -104,7 +104,6 @@ export const signUp: V1RouteHandler<SignUpRoute> = async (c) => {
     setAccessTokenCookie({c, session: signInData.session})
     setRefreshTokenCookie({c, session: signInData.session})
 
-    console.log('signUpData', signUpData.user)
     return c.json({
         user: await sign({
             ...signInData.user,

@@ -1,58 +1,76 @@
-import type { CreateCommentRoute, ReadListCommentsRoute, ReadCommentRoute, DeleteCommentRoute } from "./comments.routes.ts";
+import type { CreateCommentRoute, ReadListCommentsRoute, DeleteCommentRoute } from "./comments.routes.ts";
 import type { V1RouteHandler } from "../types.ts";
 import { Status } from "../../../utils/statusCode.ts";
-
-export const read: V1RouteHandler<ReadCommentRoute> = async (c) => {
-    const { id, messageId } = c.req.valid("param")
-
-    return c.json({
-        id: Number(id),
-        messageId: Number(messageId),
-        userId: 1,
-        content: 'This is a reply',
-        createdAt: new Date().toISOString()
-    }, Status.OK)
-}
+import { ObjectId } from "mongodb";
 
 export const readList: V1RouteHandler<ReadListCommentsRoute> = async (c) => {
     const { messageId } = c.req.valid("param")
-
-    return c.json([{
-        id: 1,
-        messageId: Number(messageId),
-        userId: 1,
-        content: 'First reply',
-        createdAt: new Date().toISOString()
-    },
-    {
-        id: 2,
-        messageId: Number(messageId),
-        userId: 2,
-        content: 'Second reply',
-        createdAt: new Date().toISOString()
-    }], Status.OK)
+    if(!c.var.databaseAgent || !c.var.user) {
+        return c.json({
+            success: false,
+            message: "Unauthorized access",
+        }, Status.UNAUTHORIZED)
+    }
+    const databaseAgent = await c.var.databaseAgent
+    const comments = await databaseAgent.collection('comments').aggregate([
+        {
+            $match: {
+                _messageId: messageId
+            }
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: '_supabaseId',
+                foreignField: '_supabaseId',
+                as: 'userinfo'
+            }
+        }
+    ]).toArray()
+    return c.json(comments, Status.OK) as any
 }
 
 export const create: V1RouteHandler<CreateCommentRoute> = async (c) => {
-    const { messageId } = c.req.valid("param")
-    const data = c.req.valid("json")
-
-    return c.json({
-        id: 1,
-        messageId: Number(messageId),
-        ...data,
+    const comment = c.req.valid("json")
+    if(!c.var.databaseAgent || !c.var.user) {
+        return c.json({
+            success: false,
+            message: "Unauthorized access",
+        }, Status.UNAUTHORIZED)
+    }
+    const databaseAgent = await c.var.databaseAgent
+    const commentInput = {
+        _supabaseId: c.var.user.id,
+        _messageId: new ObjectId(comment._messageId),
+        text: comment.text,
+        likes: 0,
         createdAt: new Date().toISOString()
+    }
+    const result = await databaseAgent.collection('comments').insertOne(commentInput)
+    return c.json({
+        _id: result.insertedId.toString(),
+        ...commentInput,
     }, Status.CREATED)
 }
 
 export const remove: V1RouteHandler<DeleteCommentRoute> = async (c) => {
-    const { id, messageId } = c.req.valid("param")
-    const { userId } = c.req.valid("query")
-
-    // Simulating a successful deletion
-    // In a real application, you would check if:
-    // 1. The message exists
-    // 2. The comment exists
-    // 3. The user owns the comment
-    return c.body(null, Status.NO_CONTENT)
+    const { id } = c.req.valid("param")
+    if(!c.var.databaseAgent || !c.var.user) {
+        return c.json({
+            success: false,
+            message: "Unauthorized access",
+        }, Status.UNAUTHORIZED)
+    }
+    const databaseAgent = await c.var.databaseAgent
+    if (id) {
+        const res = await databaseAgent.collection('comments').deleteOne({ _id: new ObjectId(id) })
+        return c.json({
+            message: 'Comment successfully deleted',
+        }, Status.OK)
+    } else {
+        return c.json({
+            success: false,
+            message: "Comment not found",
+        }, Status.NOT_FOUND)
+    }
 }

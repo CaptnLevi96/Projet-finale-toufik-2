@@ -2,30 +2,35 @@ import { Status } from './../../../utils/statusCode.ts';
 import { createRoute, z } from '@hono/zod-openapi'
 import { defaultErrorJsonContent, jsonContent } from '../../../utils/apiResponses.ts'
 import { databaseAgentMiddleware } from '../../../middleware/mongoAgent.middleware.ts';
+import { authVerify } from '../../../middleware/authVerify.middleware.ts';
 
 export const commentSchema = z.object({
-    id: z.coerce.number().openapi({
-        example: 789,
+    _id: z.string().min(1).openapi({
+        example: "123",
         param: {
             name: 'id',
             in: 'path',
         }
     }),
-    messageId: z.coerce.number().openapi({
-        example: 456,
+    _messageId: z.string().min(1).openapi({
+        example: "456",
         description: "ID of the parent message",
         param: {
             name: 'messageId',
             in: 'path',
         }
     }),
-    userId: z.coerce.number().openapi({
-        example: 123,
+    _supabaseId: z.string().min(1).openapi({
+        example: "123",
         description: "ID of the comment creator"
     }),
-    content: z.string().min(1).openapi({
+    text: z.string().min(1).openapi({
         example: 'Reply content',
         description: 'Comment content'
+    }),
+    likes: z.number().openapi({
+        example: 0,
+        description: 'Number of likes'
     }),
     createdAt: z.string().datetime().openapi({
         example: '2024-03-26T10:30:00Z',
@@ -35,31 +40,8 @@ export const commentSchema = z.object({
 
 const tags = ["Comments"]
 
-export const read = createRoute({
-    path: '/messages/{messageId}/comments/{id}',
-    method: 'get',
-    tags,
-    middleware: [
-        databaseAgentMiddleware
-    ] as const,
-    request: {
-        params: z.object({
-            messageId: commentSchema.shape.messageId,
-            id: commentSchema.shape.id
-        })
-    },
-    responses: {
-        [Status.OK]: jsonContent(
-            commentSchema,
-            'Comment'
-        ),
-        [Status.NOT_FOUND]: defaultErrorJsonContent("Comment not found"),
-        [Status.UNPROCESSABLE_ENTITY]: defaultErrorJsonContent("Invalid input"),
-    }
-})
-
 export const readList = createRoute({
-    path: '/messages/{messageId}/comments',
+    path: '/comments/{messageId}',
     method: 'get',
     tags,
     middleware: [
@@ -67,7 +49,7 @@ export const readList = createRoute({
     ] as const,
     request: {
         params: z.object({
-            messageId: commentSchema.shape.messageId
+            messageId: commentSchema.shape._messageId
         })
     },
     responses: {
@@ -80,18 +62,16 @@ export const readList = createRoute({
 })
 
 export const create = createRoute({
-    path: '/messages/{messageId}/comments',
+    path: '/comments',
     method: 'post',
     tags,
     middleware: [
-        databaseAgentMiddleware
+        databaseAgentMiddleware,
+        authVerify
     ] as const,
     request: {
-        params: z.object({
-            messageId: commentSchema.shape.messageId
-        }),
         body: jsonContent(
-            commentSchema.omit({ id: true, messageId: true, createdAt: true }),
+            commentSchema.omit({ _id: true, _supabaseId: true, createdAt: true, likes: true }),
             'Comment to create',
             true
         )
@@ -107,31 +87,30 @@ export const create = createRoute({
 })
 
 export const remove = createRoute({
-    path: '/messages/{messageId}/comments/{id}',
+    path: '/comments/{id}',
     method: 'delete',
     tags,
     middleware: [
-        databaseAgentMiddleware
+        databaseAgentMiddleware,
+        authVerify
     ] as const,
     request: {
         params: z.object({
-            messageId: commentSchema.shape.messageId,
-            id: commentSchema.shape.id
-        }),
-        query: z.object({
-            userId: commentSchema.shape.userId
+            id: commentSchema.shape._id
         })
     },
     responses: {
-        [Status.NO_CONTENT]: {
-            description: 'Comment successfully deleted'
-        },
+        [Status.OK]: jsonContent(
+            z.object({
+                message: z.string(),
+            }),
+            'Comment successfully deleted'
+        ),
         [Status.NOT_FOUND]: defaultErrorJsonContent("Comment not found"),
         [Status.UNAUTHORIZED]: defaultErrorJsonContent("Unauthorized - Only the owner can delete their comment"),
     }
 })
 
-export type ReadCommentRoute = typeof read
 export type ReadListCommentsRoute = typeof readList
 export type CreateCommentRoute = typeof create
 export type DeleteCommentRoute = typeof remove
